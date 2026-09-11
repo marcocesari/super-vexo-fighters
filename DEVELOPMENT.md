@@ -6,13 +6,13 @@
 Fighters are 3D models built from primitives — boxes, spheres, cylinders —
 fighting on a 2D plane, the way Ultimate does it. A project by Marco.
 
-## Running it
+## Playing it
 
-```bash
-./start.sh          # then open http://localhost:8080
-```
+**▶ https://marcocesari.github.io/super-vexo-fighters/** — plays in the
+browser, nothing to install.
 
-(Any static server works — ES modules just can't load from `file://`.)
+To run it locally instead: `./start.sh` and open the address it prints (any
+static server works — ES modules just can't load from `file://`).
 
 ## Playing
 
