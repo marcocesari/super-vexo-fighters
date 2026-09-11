@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Vexo Fighters</title>
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <div id="game"></div>
+
+  <!-- In-fight HUD: names, damage %, stocks / HP bars -->
+  <div id="hud" class="hidden">
+    <div class="hud-timer" id="hud-timer"></div>
+    <div class="hud-fps" id="hud-fps"></div>
+    <div class="hud-players">
+      <div class="hud-player" id="hud-p0"></div>
+      <div class="hud-player" id="hud-p1"></div>
+    </div>
+    <div id="announce" class="announce hidden"></div>
+  </div>
+
+  <!-- Menus live in the DOM: crisp text, easy to style -->
+  <div id="menu"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

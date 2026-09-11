@@ -1,0 +1,67 @@
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: "Avenir Next", "Helvetica Neue", Arial, sans-serif; }
+#game { position: fixed; inset: 0; }
+#game canvas { display: block; }
+.hidden { display: none !important; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; color: #fff; }
+.hud-timer { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font-size: 30px; font-weight: 800; text-shadow: 0 2px 6px #000; }
+.hud-fps { position: absolute; top: 10px; left: 14px; font-size: 13px; opacity: .6; font-variant-numeric: tabular-nums; }
+.hud-players { position: absolute; bottom: 26px; left: 0; right: 0; display: flex; justify-content: center; gap: 120px; }
+.hud-player { min-width: 230px; text-align: left; text-shadow: 0 2px 6px #000; transition: transform .08s; }
+.hud-player.hit { transform: scale(1.12); }
+.hud-player .name { font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.hud-player .pct { font-size: 54px; font-weight: 900; font-style: italic; line-height: 1; }
+.hud-player .pct small { font-size: 26px; }
+.hud-player .stocks { font-size: 22px; letter-spacing: 3px; margin-top: 4px; }
+.hud-player .hpbar { width: 230px; height: 14px; background: #333; border: 2px solid #fff; border-radius: 4px; margin-top: 6px; overflow: hidden; }
+.hud-player .hpbar div { height: 100%; background: linear-gradient(#8f8, #2c2); transition: width .1s; }
+.hud-player.p0 .name { color: #ff6b6b; }
+.hud-player.p1 .name { color: #6ba8ff; }
+.announce { position: absolute; top: 34%; left: 0; right: 0; text-align: center; font-size: 96px; font-weight: 900; font-style: italic; letter-spacing: 4px; text-shadow: 0 4px 12px #000, 0 0 30px #ffd23f; }
+.announce.small { font-size: 40px; }
+
+/* ---------- MENUS ---------- */
+#menu { position: fixed; inset: 0; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; text-shadow: 0 2px 6px #000; }
+#menu > * { pointer-events: auto; }
+.title { font-size: 84px; font-weight: 900; font-style: italic; letter-spacing: 3px; background: linear-gradient(#fff, #ffd23f 60%, #ff7b00); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 0 #000); margin: 0; text-align: center; }
+/* title screen, from Marco's sketch: big slanted title up top, "PRESS (A) TO START" below the crowd */
+.cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6vh 0 12vh; pointer-events: none; }
+/* the animated title: the gradient, clip and shadow live on each word so they move with it */
+.title.big { font-size: min(11vw, 128px); line-height: .92; transform: skewX(-8deg) rotate(-2deg); letter-spacing: 6px; background: none; color: #ffd23f; filter: none; }
+.title.big .word { background: linear-gradient(#fff, #ffd23f 60%, #ff7b00); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 8px 0 #000) drop-shadow(0 0 40px rgba(255,180,60,.55)); padding: 0 .06em; }
+/* the intro: each word waits off-screen until its cue adds .in */
+.word { display: inline-block; transition: transform .38s cubic-bezier(.2, 1.3, .4, 1), opacity .3s, filter .4s; will-change: transform; }
+.word.from-left  { transform: translateX(-140vw); }
+.word.from-right { transform: translateX(140vw); }
+.word.from-front { transform: scale(6); opacity: 0; filter: blur(12px); transition-duration: .7s; transition-timing-function: cubic-bezier(.3, .9, .3, 1); }
+.word.in { transform: none; opacity: 1; filter: none; }
+.press.start .wave { display: inline-block; opacity: 0; transform: translateY(-40px); }
+.press.start.in .wave { animation: drop .4s cubic-bezier(.3, 1.6, .5, 1) forwards, bob 1.7518s ease-in-out infinite; animation-delay: calc(var(--i) * .1095s), calc(1.7518s + var(--i) * .1095s); }
+@keyframes drop { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.press.start .abtn { margin: 0 .2em; }
+.splash { text-align: center; }
+.title.small { font-size: min(6vw, 48px); margin-bottom: 30px; }
+.press.start { font-size: min(4.5vw, 34px); letter-spacing: 3px; display: flex; align-items: center; gap: 0; }
+.abtn { display: inline-block; width: 1.5em; height: 1.5em; vertical-align: middle; border-radius: 50%; box-shadow: 0 0 14px rgba(255,255,255,.5); }
+.abtn svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.abtn circle { fill: rgba(0,0,0,.45); stroke: #fff; stroke-width: 3; }
+.abtn text { fill: #fff; font-weight: 900; font-style: normal; font-size: 22px; font-family: inherit; letter-spacing: 0; }
+.subtitle { font-size: 22px; opacity: .85; margin: 8px 0 40px; }
+.press { font-size: 26px; font-weight: 700; animation: blink 1.1s infinite; }
+.press.start { animation: none; }
+@keyframes blink { 50% { opacity: .25; } }
+.setup { background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.35); border-radius: 14px; padding: 22px 34px; min-width: 520px; backdrop-filter: blur(4px); }
+.setup h2 { margin: 0 0 14px; font-size: 30px; font-style: italic; }
+.row { display: flex; justify-content: space-between; align-items: center; font-size: 22px; padding: 8px 12px; border-radius: 8px; }
+.row.sel { background: rgba(255,210,63,.25); outline: 2px solid #ffd23f; }
+.row .val { font-weight: 800; }
+.row .val.locked { opacity: .4; }
+.row.go { justify-content: center; font-size: 30px; font-weight: 900; font-style: italic; margin-top: 10px; color: #ffd23f; }
+.help { font-size: 15px; opacity: .8; margin-top: 16px; line-height: 1.5; }
+.roster { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.roster span { font-size: 13px; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.15); }
+.roster span.locked { opacity: .35; text-decoration: line-through; }
+.result { font-size: 70px; font-weight: 900; font-style: italic; text-shadow: 0 4px 12px #000, 0 0 30px #ffd23f; }
+.pause { font-size: 60px; font-weight: 900; font-style: italic; }
