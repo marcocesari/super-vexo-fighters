@@ -11,10 +11,10 @@ import { Intro } from './intro.js';
 import { Music } from './music.js';
 import { Sfx } from './sfx.js';
 
-const MENU_MUSIC = 'assets/menu_music.mp3';
-const BATTLE_MUSIC = 'assets/battle_music.mp3';
+const MENU_MUSIC = 'assets/audio/menu_music.mp3';
+const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
 import { CHARACTERS } from './characters/index.js';
-import { STAGES } from './stages/index.js';
+import { STAGES } from './maps/index.js';
 
 export class Game {
   constructor(p) { this.p = p; this.t = 0; }
@@ -29,11 +29,9 @@ export class Game {
     this.stage = STAGES[0];
     this.cover = new Cover(); this.music = new Music(); this.intro = new Intro(this.music); this.sfx = new Sfx();
     this.refreshPreview();
-    this.state = 'splash'; this.menu.splash();
-    const begin = () => { if (this.state === 'splash') this.beginTitle(); };
-    window.addEventListener('pointerdown', begin);
-    // if the browser lets us play sound straight away, skip the splash
-    this.intro.start().then(ok => { if (ok && this.state === 'splash') { this.state = 'title'; this.menu.title(); } });
+    this.beginTitle();
+    // if the browser wants a gesture before it plays sound, the first click brings the music in
+    for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => { if (this.state === 'title') this.intro.unlock(); });
   }
   setPerspective() { const p = this.p; p.perspective(Math.PI / 3.2, p.width / p.height, 10, 20000); }
   resize() { this.p.resizeCanvas(this.p.windowWidth, this.p.windowHeight); this.setPerspective(); }
@@ -65,14 +63,10 @@ export class Game {
     inp.beginFrame();
     const m = inp.menu;
     switch (this.state) {
-      case 'splash':
-        this.cover.draw(p, this, 0.25);
-        if (m.any) this.beginTitle();
-        break;
       case 'title':
         this.intro.tick(document.getElementById('menu'));
         this.cover.draw(p, this, 0.25 + 0.75 * this.intro.build);
-        if (m.any) { this.intro.stop(); this.state = 'setup'; this.menu.setup(this.input); }
+        if (m.any) { this.intro.stop(); this.state = 'setup'; this.menu.setup(this.input); if (!this.music.playing) this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
         break;
       case 'setup':
         this.music.update(1);

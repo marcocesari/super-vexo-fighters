@@ -41,8 +41,6 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 @keyframes drop { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .press.start .abtn { margin: 0 .2em; }
-.splash { text-align: center; }
-.title.small { font-size: min(6vw, 48px); margin-bottom: 30px; }
 .press.start { font-size: min(4.5vw, 34px); letter-spacing: 3px; display: flex; align-items: center; gap: 0; }
 .abtn { display: inline-block; width: 1.5em; height: 1.5em; vertical-align: middle; border-radius: 50%; box-shadow: 0 0 14px rgba(255,255,255,.5); }
 .abtn svg { display: block; width: 100%; height: 100%; overflow: visible; }

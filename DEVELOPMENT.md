@@ -16,16 +16,23 @@ static server works — ES modules just can't load from `file://`).
 
 ## Playing
 
-**Menu**: Enter on the title, then ↑↓ to pick a row, ←→ to change it, Enter to fight.
+**Menu**: Enter on the title, then W/S or ↑↓ to pick a row, A/D or ←→ to change it, Enter to fight.
 
-| | P1 | P2 |
+**Keyboard** — laid out like a gamepad: the left hand is the stick, the right
+hand has the pad buttons on the arrow keys.
+
+| | Key | Gamepad equivalent |
 |---|---|---|
-| Move | A / D | ← / → |
-| Jump (tap twice for a double jump) | W | ↑ |
-| Crouch · drop through platform · fast-fall | S | ↓ |
-| Attack | F | K |
-| Special | G | L |
-| Shield | H | ; |
+| Move | A / D | stick left / right |
+| Jump (tap twice for a double jump) | W (or ←) | stick up (or X / Y) |
+| Crouch · drop through platform · fast-fall | S | stick down |
+| Attack | → | A |
+| Special | ↓ | B |
+| Shield | ↑ (or Space / Shift) | shoulders / triggers |
+| Pause | Enter or Esc | Start |
+
+Two humans and no pad? Pick the keyboard for both on the setup screen: P1 keeps
+W/A/S/D + arrows, P2 gets I/J/K/L as the stick with O attack · P special · U shield.
 
 **Gamepads** work too (Xbox, PlayStation, Switch Pro, most USB pads — plug in
 and press a button; by default the first pad is Player 1 and the second Player 2,
@@ -68,10 +75,10 @@ first to zero (or ring-out) loses.
 | **Draxos** | heavy, slow, hits hardest | Void Orb — slow, fat, painful | Dark Wings — rising claw swipe |
 | **King Dell** | king of the Dwellers; calm, precise | Thorn Arrow — fast, long range | Vine Lift |
 | **Bogo Elf** | tiny Dweller, lightest & fastest | Acorn Toss — bouncing acorn | Leaf Spin — very high |
-| **Queen Caza** | queen of the Camelloo; graceful | Sandstorm — slow wide cloud | Mirage Leap — long & floaty |
+| **Queen Caza** | camel queen of the Camelloo; graceful | Sandstorm — slow wide cloud | Mirage Leap — long & floaty |
 | **Breakrock King** | Vulcan king; slowest, strongest | Magma Boulder — lobbed, arcs | Eruption — short brutal launch |
 | **Rockheart** | his son; sturdy and quicker | Heart Shard — fast crystal | Rock Climb |
-| **Queen Coma** | queen of dreams; floaty, strange | Sleep Dust — drifting cloud | Dream Float — slow, drifts far |
+| **Queen Coma** | sleepy camel queen of dreams; floaty | Sleep Dust — drifting cloud | Dream Float — slow, drifts far |
 | **Headson** | Estronic security robot HS-1; heavy | Head Cannon — thick laser | Rocket Head |
 | **Belledon** | the bell knight; slow hammer, hits ring | Bell Toll — huge short shockwave | Chime Rise |
 
@@ -84,13 +91,13 @@ first to zero (or ring-out) loses.
 ## How it's put together
 
 ```
-src/
+game_funcionality/
   config.js         the physics numbers — calibrated to Ultimate (1 Smash unit ≈ 8.2 of ours)
   rig.js            the shared skeleton: pose angles → joint positions → primitives
   poses.js          every move as keyframes of joint angles + hitboxes
   fighter.js        physics, state machine, damage & knockback
   characters/       one file per fighter: colours, stats, extras (visor, horns…), specials
-  stages/           one file per stage: platforms, blast zones, scenery
+  maps/             one file per stage: platforms, blast zones, scenery
   cpu.js            the computer opponent
   camera.js         Smash-style framing of both fighters
   game.js           match flow, hits, projectiles, rendering
@@ -109,12 +116,12 @@ character file (that fighter only).
 
 ## The title intro
 
-The menu track ("1-02 - Menu", `assets/menu_music.mp3`) runs at 137 BPM and
-conducts the whole intro (`src/intro.js`):
+The menu track ("1-02 - Menu", `assets/audio/menu_music.mp3`) runs at 137 BPM and
+conducts the whole intro (`game_funcionality/intro.js`):
 
 1. The music starts from its first note, with the crowd on the cover
    brightening from dim to full.
-2. 1 s in, Marco's voice-over (`assets/title_voice.wav`, cut so its words are
+2. 1 s in, Marco's voice-over (`assets/audio/title_voice.mp3`, cut so its words are
    two beats and one bar apart at the track's 137 BPM) hits: **SU-PER**
    slides in from the left, **VEXO** from the right, **FIGH-TERS** flies in
    from the screen.
@@ -123,16 +130,17 @@ conducts the whole intro (`src/intro.js`):
    first downbeat — then bobs in time with the music.
 
 Everything is timed off the music's own clock, so it can't drift. If the
-browser won't play sound before a click, a "click or press any key" screen
-comes first. The menu music keeps looping through the setup screen; a match plays
-`assets/battle_music.mp3` ("1-03 - Battlefield") instead, which drops to a
+browser won't play sound before a click, the title animates on a plain timer
+and the music joins in at the right spot on the first click or key. The menu music keeps looping through the setup screen; a match plays
+`assets/audio/battle_music.mp3` ("1-03 - Battlefield") instead, which drops to a
 murmur on the results screen.
 
 ## Sound effects
 
-Hit sounds are from Kenney's [Impact Sounds](https://kenney.nl/assets/impact-sounds)
-pack (CC0 — public domain, licence in `assets/sfx/`), converted to `.wav`.
-`src/sfx.js` picks a light / medium / heavy hit by damage (Belledon's hits
-ring a bell), a metallic clank for blocked hits, glass for a shield break,
-and a heavy plate for a KO — each from a few variants with a little random
-pitch so no two hits sound the same.
+Every landed punch plays Marco's `assets/audio/game_hit.mp3` — a little louder
+and deeper the harder the hit (Belledon's hits ring a bell on top). The other
+sounds are from Kenney's [Impact Sounds](https://kenney.nl/assets/impact-sounds)
+pack (CC0 — public domain, licence in `assets/audio/`), converted to `.wav`:
+a metallic clank for blocked hits, glass for a shield break, and a heavy plate
+for a KO — each from a few variants with a little random pitch so no two sound
+the same.

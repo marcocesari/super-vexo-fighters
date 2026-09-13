@@ -1,10 +1,10 @@
 // Headless smoke test: two CPUs fight on every stage with no renderer.
 // Run: node tools/smoke.mjs
-import { Fighter } from '../src/fighter.js';
-import { CPU } from '../src/cpu.js';
-import { CHARACTERS } from '../src/characters/index.js';
-import { STAGES } from '../src/stages/index.js';
-import { MODES, HITLAG_CAP } from '../src/config.js';
+import { Fighter } from '../game_funcionality/fighter.js';
+import { CPU } from '../game_funcionality/cpu.js';
+import { CHARACTERS } from '../game_funcionality/characters/index.js';
+import { STAGES } from '../game_funcionality/maps/index.js';
+import { MODES, HITLAG_CAP } from '../game_funcionality/config.js';
 
 class FakeGame {
   constructor(stage, mode) { this.stage = stage; this.mode = mode; this.projectiles = []; this.kos = 0; this.hits = 0; this.sparks = 0; }

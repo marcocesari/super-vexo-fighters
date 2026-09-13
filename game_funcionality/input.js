@@ -1,8 +1,12 @@
 // Keyboard + gamepads → per-player "pad" snapshots.
 //
-// Keyboard (e.code, so it works on any layout):
-//   P1: A D move, W jump, S crouch/drop/fast-fall, F attack, G special, H shield
-//   P2: ← → move, ↑ jump, ↓ crouch, K attack, L special, ; shield
+// The keyboard is laid out like ONE gamepad (e.code, so it works on any layout):
+//   left hand  = the stick:      W up/jump · A D move · S crouch/drop/fast-fall
+//   right hand = the arrow keys as the pad buttons (Marco's layout):
+//                → = A attack · ↓ = B special · ↑ = shield bubble · ← = jump (X/Y)
+//   Space / Shift also shield · Enter = Start (pause / confirm) · Esc = back
+// A second human with no pad gets the right side of the keyboard (P2 layout):
+//   I J K L = stick · O attack · P special · U shield
 //
 // Gamepads (Web Gamepad API, standard mapping — Xbox / PlayStation / Switch Pro
 // / most USB pads): the first pad plugged in is Player 1, the second Player 2.
@@ -11,13 +15,19 @@
 //   stick up / d-pad up jump (tap jump, like Smash)   X or Y  jump
 //   A  attack     B  special     any shoulder / trigger  shield
 //   Start  pause / confirm in menus     B  back in menus
-export const BINDINGS = [
-  { left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', attack: 'KeyF', special: 'KeyG', shield: 'KeyH' },
-  { left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', attack: 'KeyK', special: 'KeyL', shield: 'Semicolon' },
-];
+// Every binding is a list of key codes: any of them counts.
+export const KEYBOARD = {
+  left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'],
+  jump: ['ArrowLeft'], attack: ['ArrowRight'], special: ['ArrowDown'],
+  shield: ['ArrowUp', 'Space', 'ShiftLeft', 'ShiftRight'], start: ['Enter'],
+};
+export const KEYBOARD2 = {
+  left: ['KeyJ'], right: ['KeyL'], up: ['KeyI'], down: ['KeyK'],
+  jump: [], attack: ['KeyO'], special: ['KeyP'], shield: ['KeyU'], start: ['Enter'],
+};
 export const BINDING_TEXT = [
-  'P1: A/D move · W jump · S crouch/fast-fall · F attack · G special · H shield (+dir: roll · +S: spot dodge · in air: air dodge)',
-  'P2: ←/→ move · ↑ jump · ↓ crouch/fast-fall · K attack · L special · ; shield',
+  '⌨️ W/A/S/D = stick (W jump · S crouch/fast-fall) · → attack (A) · ↓ special (B) · ↑ shield · ← jump · Enter start',
+  '⌨️ P2 on the same keyboard: I/J/K/L = stick · O attack · P special · U shield',
   '🎮 stick/d-pad move · stick up or X/Y jump · A attack · B special · shoulders shield · Start pause',
 ];
 
@@ -41,6 +51,7 @@ export class Input {
     this.gpPads = [];             // this frame's gamepad snapshots, in connection order
     this.assign = [0, 1];         // which gamepad (index into gpPads) each player uses; -1 = keyboard only
     this.gpPrev = {};             // last frame's raw state per gamepad index, for edge detection
+    this.p2cpu = true;            // set by the menu: with a CPU opponent the keyboard is never shared
     this.gpNames = [];
     this.menu = { up: false, down: false, left: false, right: false, confirm: false, back: false, start: false, any: false };
     window.addEventListener('keydown', e => {
@@ -86,21 +97,30 @@ export class Input {
     const kp = c => this.pressed.has(c);
     m.up ||= kp('ArrowUp') || kp('KeyW'); m.down ||= kp('ArrowDown') || kp('KeyS');
     m.left ||= kp('ArrowLeft') || kp('KeyA'); m.right ||= kp('ArrowRight') || kp('KeyD');
-    m.confirm ||= kp('Enter'); m.back ||= kp('Escape'); m.start ||= kp('Escape'); m.any ||= kp('Enter') || kp('Space');
+    m.confirm ||= kp('Enter'); m.back ||= kp('Escape'); m.start ||= kp('Escape') || kp('Enter'); m.any ||= kp('Enter') || kp('Space');
     this.menu = m;
   }
 
+  // Both humans on the keyboard and nobody on a pad → P1 keeps WASD + arrows, P2 gets IJKL + O P U.
+  kbShared() { return !this.p2cpu && this.assign[0] < 0 && this.assign[1] < 0; }
+  keys(i) { return i === 1 && this.kbShared() ? KEYBOARD2 : KEYBOARD; }
+
   // Snapshot for one player: keyboard and that player's gamepad merged.
+  // The keyboard belongs to whoever picked it; when nobody did (P1 on the only pad,
+  // P2 is the CPU) it still drives P1, so it never goes dead.
   pad(i) {
-    const b = BINDINGS[i], h = this.held, p = this.pressed;
     const pad = emptyPad();
-    pad.left = h.has(b.left); pad.right = h.has(b.right);
-    pad.up = h.has(b.up); pad.down = h.has(b.down); pad.jump = pad.up;          // on a keyboard the jump key is the up key
-    pad.attack = h.has(b.attack); pad.special = h.has(b.special); pad.shield = h.has(b.shield);
-    pad.upP = p.has(b.up); pad.downP = p.has(b.down); pad.jumpP = pad.upP;
-    pad.attackP = p.has(b.attack); pad.specialP = p.has(b.special); pad.shieldP = p.has(b.shield);
-    pad.x = (pad.right ? 1 : 0) - (pad.left ? 1 : 0);
     const g = this.assign[i] >= 0 ? this.gpPads[this.assign[i]] : null;
+    const other = 1 - i, nobodyOnKeys = this.assign[0] >= 0 && (this.p2cpu || this.assign[1] >= 0);
+    if (this.assign[i] < 0 || (i === 0 && nobodyOnKeys)) {
+      const b = this.keys(i), h = c => b[c].some(k => this.held.has(k)), p = c => b[c].some(k => this.pressed.has(k));
+      pad.left = h('left'); pad.right = h('right');
+      pad.up = h('up'); pad.down = h('down'); pad.jump = pad.up || h('jump');   // stick up is a tap-jump, like on a pad
+      pad.attack = h('attack'); pad.special = h('special'); pad.shield = h('shield');
+      pad.upP = p('up'); pad.downP = p('down'); pad.jumpP = pad.upP || p('jump');
+      pad.attackP = p('attack'); pad.specialP = p('special'); pad.shieldP = p('shield');
+      pad.x = (pad.right ? 1 : 0) - (pad.left ? 1 : 0);
+    }
     if (g) {
       if (!pad.x) pad.x = g.x;
       for (const k of ['left', 'right', 'up', 'down', 'jump', 'attack', 'special', 'shield', 'upP', 'downP', 'jumpP', 'attackP', 'specialP', 'shieldP']) pad[k] ||= g[k];
@@ -116,7 +136,11 @@ export class Input {
     if (pick >= 0 && this.assign[other] === pick) this.assign[other] = this.assign[i];
     this.assign[i] = pick;
   }
-  assignName(i) { const a = this.assign[i]; return a >= 0 && this.gpNames[a] ? `🎮 ${this.gpNames[a]}` : (i === 0 ? '⌨️ Keyboard (WASD)' : '⌨️ Keyboard (arrows)'); }
+  assignName(i) {
+    const a = this.assign[i];
+    if (a >= 0 && this.gpNames[a]) return `🎮 ${this.gpNames[a]}`;
+    return this.kbShared() ? (i === 0 ? '⌨️ Keyboard (WASD + arrows)' : '⌨️ Keyboard (IJKL + O P U)') : '⌨️ Keyboard';
+  }
   wasPressed(code) { return this.pressed.has(code); }
   endFrame() { this.pressed.clear(); }
 }

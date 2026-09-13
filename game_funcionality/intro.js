@@ -3,7 +3,7 @@
 // "1-02 - Menu" plays from its very first note. It runs at 137 BPM (0.435 s a
 // beat, 1.74 s a bar): a six-second swell, the beat entering at 6.33 s, and
 // its first real downbeat at 7.20 s. Marco's voice-over
-// (assets/title_voice.wav, cut so its words sit two beats and one bar apart)
+// (assets/audio/title_voice.mp3, cut so its words sit two beats and one bar apart)
 // comes in 1 s after the music starts:
 //
 //   music time  1.00  SU-PER     slides in from the left
@@ -35,18 +35,28 @@ const VOICE_END = VOICE_AT + 3.1;
 export class Intro {
   constructor(music) {
     this.music = music;
-    this.voice = new Audio('assets/title_voice.wav'); this.voice.preload = 'auto';
+    this.voice = new Audio('assets/audio/title_voice.mp3'); this.voice.preload = 'auto';
     this.started = false; this.done = new Set(); this.voiceStarted = false;
   }
 
   // Start the show. Resolves true if sound is allowed, false if the browser wants a click first.
   async start() {
     this.done.clear(); this.voiceStarted = false; this.started = true; this.clockStart = performance.now();
-    const ok = await this.music.play('assets/menu_music.mp3', { volume: 0.55, offset: MUSIC_START, fadeIn: 0 });
+    const ok = await this.music.play('assets/audio/menu_music.mp3', { volume: 0.55, offset: MUSIC_START, fadeIn: 0 });
     this.useMusicClock = ok;
     return ok;
   }
   stop() { this.started = false; try { this.voice.pause(); } catch {} }
+  // The browser blocked sound at start-up: on the first gesture, bring the music
+  // (and the voice, if its moment hasn't passed) in at the timer's current position.
+  async unlock() {
+    if (!this.started || this.useMusicClock) return;
+    const t = this.time();
+    const ok = await this.music.play('assets/audio/menu_music.mp3', { volume: 0.55, offset: t, fadeIn: 0.3 });
+    if (!ok || this.useMusicClock) return;
+    this.useMusicClock = true;
+    if (!this.voiceStarted && t < VOICE_END) { this.voiceStarted = true; this.voice.currentTime = Math.max(0, t - VOICE_AT); this.voice.play().catch(() => {}); }
+  }
 
   // Position in the timeline, in music seconds.
   time() {
