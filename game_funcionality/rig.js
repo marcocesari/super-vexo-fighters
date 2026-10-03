@@ -10,6 +10,8 @@
 // Maths space is y-UP with the fighter facing +x. p5's WEBGL is y-DOWN, so
 // drawing negates y. Depth (z) points at the camera: the right arm/leg sit
 // at +z (in front), the left at -z (behind).
+import { Q } from './quality.js';
+
 const D = Math.PI / 180;
 
 export const BASE_PROPS = {
@@ -114,13 +116,13 @@ export function seg(p, a, b, r, shape = 'cyl', w = r * 2, d = r * 2) {
   const ax = dz, az = -dx, al = Math.hypot(ax, az);   // axis = up × dir
   if (al > 1e-4) p.rotate(Math.acos(Math.max(-1, Math.min(1, dy / len))), [ax / al, 0, az / al]);
   else if (dy < 0) p.rotateX(Math.PI);
-  if (shape === 'cyl') p.cylinder(r, len, 10, 1);
+  if (shape === 'cyl') p.cylinder(r, len, Q.cylSegs, 1);
   else p.box(w, len, d);
   p.pop();
 }
 // Emissive (self-lit) drawing, fenced in push/pop so it never leaks into later fills.
 export function glow(p, col, fn) { p.push(); p.fill(0); p.emissiveMaterial(col); fn(); p.pop(); }
-export function ball(p, a, r) { p.push(); p.translate(a.x, -a.y, a.z); p.sphere(r, 12, 8); p.pop(); }
+export function ball(p, a, r) { p.push(); p.translate(a.x, -a.y, a.z); p.sphere(r, Q.sphereU, Q.sphereV); p.pop(); }
 
 export function drawRig(p, j, P, C, char, ctx) {
   const s = P.scale;
@@ -144,7 +146,7 @@ export function drawRig(p, j, P, C, char, ctx) {
   p.fill(C.skin); ball(p, j.head, P.headR * s);
   if (C.hair) {                                        // a cap of hair, set back a touch
     p.fill(C.hair);
-    p.push(); p.translate(j.head.x - ctx.facing * 2 * s, -j.head.y - 4 * s, j.head.z); p.sphere(P.headR * 0.98 * s, 12, 8); p.pop();
+    p.push(); p.translate(j.head.x - ctx.facing * 2 * s, -j.head.y - 4 * s, j.head.z); p.sphere(P.headR * 0.98 * s, Q.sphereU, Q.sphereV); p.pop();
   }
   if (char.extras) char.extras(p, j, P, C, ctx);
 }

@@ -1,7 +1,8 @@
 // Smash-style camera: frames both fighters, zooms in when they're close.
 export class Camera {
-  constructor() { this.x = 0; this.y = 150; this.dist = 900; this.shakeT = 0; this.shakeA = 0; }
+  constructor() { this.x = 0; this.y = 150; this.dist = 900; this.shakeT = 0; this.shakeA = 0; this.px = this.x; this.py = this.y; this.pdist = this.dist; }
   update(fighters, stage) {
+    this.px = this.x; this.py = this.y; this.pdist = this.dist;     // last step's framing, for smooth drawing in between
     const live = fighters.filter(f => !f.dead);
     let minX = -200, maxX = 200, minY = 0, maxY = 250;
     if (live.length) {
@@ -17,10 +18,11 @@ export class Camera {
     if (this.shakeT > 0) this.shakeT--;
   }
   shake(a) { this.shakeA = Math.max(this.shakeA, a); this.shakeT = 10; }
-  apply(p) {
+  apply(p, a = 1) {
     const s = this.shakeT > 0 ? this.shakeA * this.shakeT / 10 : 0;
     const ox = (Math.random() - 0.5) * s, oy = (Math.random() - 0.5) * s;
     if (this.shakeT === 0) this.shakeA = 0;
-    p.camera(this.x + ox, -this.y + oy, this.dist, this.x + ox, -this.y + oy, 0, 0, 1, 0);
+    const x = this.px + (this.x - this.px) * a + ox, y = this.py + (this.y - this.py) * a - oy;
+    p.camera(x, -y, this.pdist + (this.dist - this.pdist) * a, x, -y, 0, 0, 1, 0);
   }
 }

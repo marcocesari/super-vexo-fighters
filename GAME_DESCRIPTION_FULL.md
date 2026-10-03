@@ -4,4 +4,6 @@ A Super Smash Bros. Ultimate–inspired fighter set in the world of *Super Vexo*
 
 Eleven fighters from the Vexo universe, three stages, Stock or Stamina rules, two players (keyboard or gamepad) or one vs. CPU. Ultimate-style moves: tilts, aerials, short hops, shield, dodges, ledge grabs — with Ultimate's real knockback formulas.
 
+**Settings** (in match setup): **Game speed** — 50%, 65%, **75%** (the default), 85% or 100% of Ultimate's pace. It stretches time for the whole fight, so every move keeps exactly its own timing; nothing becomes stronger or weaker, there is just more time to see it. **Graphics** — Auto, High, Medium or Low. Auto watches the frame rate and picks for itself, so the game looks its best on a fast machine and still plays on a slow one. The fight runs at the same speed whatever your screen does, and on a 120 Hz screen it is drawn 120 times a second.
+
 **Play**: https://marcocesari.github.io/super-vexo-fighters/ (or locally: `./start.sh`). Keyboard is laid out like a gamepad: WASD = stick (W jump, S crouch), → attack, ↓ special, ↑ shield, ← jump, Enter pause. A second human on the same keyboard uses IJKL + O attack, P special, U shield. Gamepads: stick/d-pad move, A attack, B special, shoulders shield.

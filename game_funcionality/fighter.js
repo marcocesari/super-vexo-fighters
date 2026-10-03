@@ -14,6 +14,7 @@ import { GRAVITY, FALL, FAST_FALL_MUL, GROUND_FRICTION, AIR_FRICTION, JUMPSQUAT,
          LAUNCH_SPEED, LAUNCH_DECAY, TUMBLE_KB, HITLAG_CAP, SHIELD_HP, SHIELD_DRAIN, SHIELD_REGEN, SHIELD_BREAK_STUN,
          MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY } from './config.js';
 import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js';
+import { Q } from './quality.js';
 import { buildClips, samplePose } from './poses.js';
 
 const AERIALS = { neutral: 'nair', forward: 'fair', back: 'bair', up: 'uair', down: 'dair' };
@@ -38,6 +39,7 @@ export class Fighter {
     this.height = (this.props.hipH + this.props.torso + this.props.neck + this.props.headR * 2) * this.props.scale;
     this.percent = 0; this.hp = STAMINA_HP; this.stocks = STOCKS;
     this.x = 0; this.y = 0; this.vx = 0; this.vy = 0; this.facing = 1;
+    this.prevX = 0; this.prevY = 0;                // where the last step left us, for smooth drawing between steps
     this.kbx = 0; this.kby = 0;                                  // launch velocity, decays linearly
     this.grounded = false; this.platform = null;
     this.state = 'idle'; this.frame = 0; this.jumpsLeft = 1; this.usedUpSpecial = false; this.usedAirdodge = false;
@@ -51,7 +53,7 @@ export class Fighter {
   }
 
   spawn(x, facing, y = 0) {
-    this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.kbx = this.kby = 0; this.facing = facing;
+    this.x = x; this.y = y; this.prevX = x; this.prevY = y;        // a spawn is a jump through space: never draw the trip this.vx = 0; this.vy = 0; this.kbx = this.kby = 0; this.facing = facing;
     this.grounded = false; this.setState('fall'); this.hitstun = 0; this.hitlag = 0; this.spin = 0; this.shieldStun = 0;
     this.jumpsLeft = 1; this.usedUpSpecial = false; this.usedAirdodge = false; this.dead = false; this.ledge = null;
     this.shieldHP = SHIELD_HP;
@@ -75,6 +77,7 @@ export class Fighter {
   // --------------------------------------------------------------- update
   update(pad, game) {
     this.pad = pad;
+    this.prevX = this.x; this.prevY = this.y;
     if (this.dead) { this.respawnTimer--; if (this.respawnTimer <= 0 && this.stocks > 0) this.respawn(game); return; }
     if (this.invincible > 0) this.invincible--;
     if (this.flash > 0) this.flash--;
@@ -405,15 +408,20 @@ export class Fighter {
   kill() { this.dead = true; this.respawnTimer = RESPAWN_DELAY; this.hitstun = 0; this.vx = this.vy = this.kbx = this.kby = 0; this.ledge = null; }
 
   // --------------------------------------------------------------- draw
-  draw(p, t) {
+  // `a` is how far we are between the last step and the next one (0..1): the
+  // body is drawn at that point between the two, so motion stays smooth even
+  // when the screen refreshes more often than the fight steps.
+  draw(p, t, a = 1) {
     if (this.dead) return;
     if (this.invincible > 0 && this.state !== 'ledge' && this.invincible % 8 < 4) return;   // blink
     const j = this.joints();
-    p.push(); p.translate(this.x, -this.y, 0);
-    // ground shadow
-    p.push(); p.noStroke(); p.fill(0, 0, 0, 80); p.translate(0, -1, 0); p.rotateX(Math.PI / 2);
-    const gy = this.groundBelow(this.y); const sh = Math.max(0.2, 1 - (this.y - gy) / 700);
-    p.translate(0, 0, -(this.y - gy)); p.ellipse(0, 0, 70 * sh, 26 * sh); p.pop();
+    const x = this.prevX + (this.x - this.prevX) * a, y = this.prevY + (this.y - this.prevY) * a;
+    p.push(); p.translate(x, -y, 0);
+    if (Q.shadows) {                                                                       // ground shadow
+      p.push(); p.noStroke(); p.fill(0, 0, 0, 80); p.translate(0, -1, 0); p.rotateX(Math.PI / 2);
+      const gy = this.groundBelow(y); const sh = Math.max(0.2, 1 - (y - gy) / 700);
+      p.translate(0, 0, -(y - gy)); p.ellipse(0, 0, 70 * sh, 26 * sh); p.pop();
+    }
     const ctx = { facing: this.facing, t, fighter: this };
     const ghost = this.intangible && this.invincible === 0;                      // dodging: drawn see-through
     if (this.flash > 0) {                      // hit flash: every part self-lit white

@@ -100,10 +100,56 @@ game_funcionality/
   maps/             one file per stage: platforms, blast zones, scenery
   cpu.js            the computer opponent
   camera.js         Smash-style framing of both fighters
+  quality.js        the graphics levels, and the watchdog that picks one
   game.js           match flow, hits, projectiles, rendering
   menu.js, hud.js   DOM overlays
 tools/smoke.mjs     headless CPU-vs-CPU test:  node tools/smoke.mjs
 ```
+
+### Same speed on every machine
+
+The fight is simulated in whole 1/60 s steps, and drawing is a separate thing
+that happens as often as the screen can manage. `Game.draw()` is handed however
+much real time has passed and pays it out in steps: `tick()` may run twice
+before one `paint()` on a slow laptop, or `paint()` may be skipped entirely on a
+120 Hz screen where nothing has moved yet. So a fast screen can't speed the
+fight up and a slow one can't slow it down — the numbers in `config.js` mean the
+same thing everywhere.
+
+Full speed holds down to about 10 drawn frames a second. Below that the fight
+goes into slow motion rather than skipping ahead, so you can still see what is
+happening (`MAX_FRAME_MS` in `config.js` sets that floor).
+
+p5 caps itself at 60 drawn frames a second unless told otherwise, which throws
+away every other frame on a 120 Hz screen — so `setup()` asks for `TARGET_FPS`
+(120). The fight still steps 60 times a second; the extra pictures are drawn
+between steps, which is what makes them worth asking for. A slower screen or GPU
+just gives what it can.
+
+Between two steps the fighters, camera, projectiles and sparks are drawn at the
+point they have actually reached (`draw(p, t, a)`, where `a` is how far along we
+are). Without that, a fight stepping 45 times a second on a 60 Hz screen would
+repeat every fourth frame and look like a stutter; with it, any game speed looks
+smooth on any screen.
+
+### Game speed
+
+**Game speed** in match setup stretches time for the fight only — menus and the
+title always run at full speed. It is a share of Ultimate's pace: 50%, 65%,
+**75% (the default)**, 85%, 100%. Because it stretches time rather than changing
+any number, every move keeps exactly its authored frame data: nothing becomes
+stronger, weaker, safer or harder to punish, there is just more of a second
+between frames. The match clock counts game seconds, so at 75% it runs slower
+than a real clock. The speeds live in `SPEEDS` in `config.js`.
+
+`quality.js` is the other half: **Graphics** in match setup is *Auto* by
+default, which watches the real frame rate and steps between High, Medium and
+Low — canvas resolution first, then the detail of round shapes, ground shadows,
+spark counts and the title screen's sunburst. A level that fails twice is not
+offered again, so a borderline machine settles instead of flickering between two
+looks. Set it to High / Medium / Low by hand to pin it; the choice is remembered
+in the browser. The in-match readout (top right) shows drawn frames per second
+and the current level.
 
 ### Adding a move from a video / screenshot
 

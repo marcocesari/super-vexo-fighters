@@ -50,16 +50,19 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 .press { font-size: 26px; font-weight: 700; animation: blink 1.1s infinite; }
 .press.start { animation: none; }
 @keyframes blink { 50% { opacity: .25; } }
-.setup { background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.35); border-radius: 14px; padding: 22px 34px; min-width: 520px; backdrop-filter: blur(4px); }
-.setup h2 { margin: 0 0 14px; font-size: 30px; font-style: italic; }
-.row { display: flex; justify-content: space-between; align-items: center; font-size: 22px; padding: 8px 12px; border-radius: 8px; }
+/* Match setup has to fit a short screen — a 1366x768 Chromebook leaves about
+   650 px of page — so every size is capped in vh as well as px: full size on a
+   big screen, quietly smaller on a small one. max-height is the last resort. */
+.setup { background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.35); border-radius: 14px; padding: min(22px, 2.4vh) 34px; min-width: 520px; max-width: 94vw; max-height: 98vh; overflow-y: auto; backdrop-filter: blur(4px); }
+.setup h2 { margin: 0 0 min(14px, 1.5vh); font-size: min(30px, 3.6vh); font-style: italic; }
+.row { display: flex; justify-content: space-between; align-items: center; font-size: min(22px, 2.7vh); padding: min(8px, .85vh) 12px; border-radius: 8px; }
 .row.sel { background: rgba(255,210,63,.25); outline: 2px solid #ffd23f; }
 .row .val { font-weight: 800; }
 .row .val.locked { opacity: .4; }
-.row.go { justify-content: center; font-size: 30px; font-weight: 900; font-style: italic; margin-top: 10px; color: #ffd23f; }
-.help { font-size: 15px; opacity: .8; margin-top: 16px; line-height: 1.5; }
-.roster { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-.roster span { font-size: 13px; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.15); }
+.row.go { justify-content: center; font-size: min(30px, 3.6vh); font-weight: 900; font-style: italic; margin-top: min(10px, 1.3vh); color: #ffd23f; }
+.help { font-size: min(15px, 1.9vh); opacity: .8; margin-top: min(16px, 1.6vh); line-height: 1.4; }
+.roster { display: flex; flex-wrap: wrap; gap: 6px; margin-top: min(12px, 1.2vh); }
+.roster span { font-size: min(13px, 1.7vh); padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.15); }
 .roster span.locked { opacity: .35; text-decoration: line-through; }
 .result { font-size: 70px; font-weight: 900; font-style: italic; text-shadow: 0 4px 12px #000, 0 0 30px #ffd23f; }
 .pause { font-size: 60px; font-weight: 900; font-style: italic; }

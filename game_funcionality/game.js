@@ -1,5 +1,12 @@
 // The match itself: states, the fixed 60 fps step, hits, projectiles, and the render pass.
-import { MODES, HITLAG_CAP } from './config.js';
+//
+// Simulation and drawing are kept apart. draw() is called by the browser as
+// often as the screen can manage — 60, 120, or 20 times a second on a tired
+// laptop — and it hands the *real elapsed time* to a clock that runs the fight
+// in whole 1/60 s steps: tick() may run none, one, or several times before a
+// single paint(). So a fast screen no longer speeds the fight up, and a slow
+// one no longer slows it down; it only gets fewer pictures of it.
+import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js';
 import { Input, emptyPad } from './input.js';
 import { Fighter } from './fighter.js';
 import { CPU } from './cpu.js';
@@ -10,6 +17,16 @@ import { Cover } from './cover.js';
 import { Intro } from './intro.js';
 import { Music } from './music.js';
 import { Sfx } from './sfx.js';
+import { Quality, Q } from './quality.js';
+
+// A frame that is within SNAP_TOLERANCE of a whole number of steps is counted as
+// exactly that many. Without it a 60 Hz screen drifts in and out of phase with
+// our 60 Hz clock, so some frames get two steps and some none — which reads as
+// judder even though the average speed is right.
+function snap(dtMs) {
+  const steps = dtMs / STEP_MS, near = Math.round(steps);
+  return near >= 1 && Math.abs(steps - near) < SNAP_TOLERANCE ? near * STEP_MS : dtMs;
+}
 
 const MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
@@ -17,12 +34,15 @@ import { CHARACTERS } from './characters/index.js';
 import { STAGES } from './maps/index.js';
 
 export class Game {
-  constructor(p) { this.p = p; this.t = 0; }
+  constructor(p) { this.p = p; this.t = 0; this.acc = 0; this.lastMs = 0; this.sincePaint = 0; this.repaint = true; }
 
   setup() {
     const p = this.p;
     p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
-    p.frameRate(60); p.setAttributes('antialias', true);
+    // Ask for TARGET_FPS pictures a second instead of p5's own cap of 60; the
+    // clock in draw() decides how much of the fight each picture is worth.
+    p.frameRate(TARGET_FPS);
+    this.quality = new Quality(); this.quality.attach(p);
     this.setPerspective();
     this.input = new Input(); this.hud = new HUD(); this.menu = new Menu(this); this.cam = new Camera();
     this.fighters = []; this.projectiles = []; this.sparks = [];
@@ -34,7 +54,7 @@ export class Game {
     for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, () => { if (this.state === 'title') this.intro.unlock(); });
   }
   setPerspective() { const p = this.p; p.perspective(Math.PI / 3.2, p.width / p.height, 10, 20000); }
-  resize() { this.p.resizeCanvas(this.p.windowWidth, this.p.windowHeight); this.setPerspective(); }
+  resize() { this.p.resizeCanvas(this.p.windowWidth, this.p.windowHeight); this.setPerspective(); this.repaint = true; }
 
   // ------------------------------------------------------------ flow
   refreshPreview() {
@@ -58,40 +78,74 @@ export class Game {
     this.menu.clear(); this.hud.show(true); this.hud.announce('GO!', 60); this.state = 'fight';
   }
 
+  // ------------------------------------------------------------ the clock
+  // One browser frame: work out how much time really passed, pay it out in
+  // whole 1/60 s steps, then draw once if anything moved.
   draw() {
-    const p = this.p, inp = this.input; this.t++;
+    const now = performance.now();
+    let real = this.lastMs ? now - this.lastMs : STEP_MS;
+    this.lastMs = now;
+    if (!(real > 0)) real = STEP_MS;
+    this.sincePaint += real;                              // real time, for the frame-rate watchdog
+    // Simulated time. A long stall is not fast-forwarded, and the fight (never
+    // the menus) is stretched by the chosen game speed.
+    const slowed = this.state === 'fight' || this.state === 'result';
+    this.acc += snap(Math.min(real, MAX_FRAME_MS)) * (slowed ? this.speed() : 1);
+    let steps = Math.floor(this.acc / STEP_MS);
+    if (steps > MAX_CATCHUP_STEPS) { steps = MAX_CATCHUP_STEPS; this.acc = 0; }
+    else this.acc -= steps * STEP_MS;
+    for (let i = 0; i < steps; i++) this.tick();
+    // Draw every frame, at the point we have actually reached *between* two
+    // steps. That is what keeps a 45-step-a-second fight looking as smooth as a
+    // 60-step one, and a 60-step fight smooth on a 120 Hz screen.
+    this.paint(this.acc / STEP_MS);
+    this.quality.sample(this.sincePaint); this.sincePaint = 0;
+  }
+  speed() { return SPEEDS[this.menu.cfg.speed].mul; }
+
+  // One 1/60 s step of whatever the game is currently doing. No drawing here.
+  tick() {
+    const inp = this.input; this.t++;
     inp.beginFrame();
     const m = inp.menu;
     switch (this.state) {
       case 'title':
         this.intro.tick(document.getElementById('menu'));
-        this.cover.draw(p, this, 0.25 + 0.75 * this.intro.build);
         if (m.any) { this.intro.stop(); this.state = 'setup'; this.menu.setup(this.input); if (!this.music.playing) this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
         break;
       case 'setup':
         this.music.update(1);
         if (this.menu.handleSetupKey(inp)) this.startMatch();
-        else { this.refreshPreview(); this.renderPreview(); }
+        else { this.refreshPreview(); this.stepPreview(); }
         break;
       case 'fight':
         if (m.start) { this.state = 'paused'; this.menu.pause(); break; }
         this.music.update(1);
-        this.step(); this.render();
+        this.step();
         break;
       case 'paused':
-        this.render();
         if (m.start) { this.state = 'fight'; this.menu.clear(); }
         else if (inp.wasPressed('KeyQ') || m.back) this.toSetup();
         break;
       case 'result':
         this.music.update(0.35);                                  // battle music sits back under the result
-        this.stepIdle(); this.render();
+        this.stepIdle();
         if (m.confirm) this.startMatch();
         else if (m.back) this.toSetup();
         break;
     }
     inp.endFrame();
   }
+
+  // One picture of wherever we are now, `a` of the way to the next step.
+  paint(a = 1) {
+    switch (this.state) {
+      case 'title': this.cover.draw(this.p, this, 0.25 + 0.75 * this.intro.build); break;
+      case 'setup': this.renderPreview(); break;
+      default: this.render(a);
+    }
+  }
+
   beginTitle() { this.state = 'title'; this.menu.title(); this.intro.start(); }
   toSetup() { this.hud.show(false); this.state = 'setup'; this.menu.setup(this.input); this.refreshPreview(); this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
 
@@ -104,7 +158,7 @@ export class Game {
     this.separateBodies(); this.resolveHits(); this.stepProjectiles(); this.stepSparks();
     this.cam.update(this.fighters, this.stage);
     this.frames++;
-    this.hud.update(this.fighters, this.mode, this.clock(), this.p.frameRate());
+    this.hud.update(this.fighters, this.mode, this.clock(), this.quality.label());
     if (this.endTimer > 0 && --this.endTimer === 0) { this.state = 'result'; this.menu.result(`${this.winner.name.toUpperCase()} WINS!`); }
   }
   stepIdle() { this.fighters.forEach(f => { if (!f.dead) f.update(emptyPad(), this); }); this.stepSparks(); this.stepProjectiles(); this.cam.update(this.fighters, this.stage); this.hud.update(this.fighters, this.mode, this.clock()); }
@@ -138,9 +192,10 @@ export class Game {
   }
   hitlag(dmg) { return Math.min(HITLAG_CAP, Math.floor(dmg * 0.65 + 6)); }   // Ultimate's freeze frames
 
-  addProjectile(pr) { this.projectiles.push({ gravity: 0, ...pr, age: 0 }); }
+  addProjectile(pr) { this.projectiles.push({ gravity: 0, ...pr, age: 0, px: pr.x, py: pr.y }); }
   stepProjectiles() {
     for (const pr of this.projectiles) {
+      pr.px = pr.x; pr.py = pr.y;
       pr.x += pr.vx; pr.y += pr.vy; pr.vy += pr.gravity; pr.life--; pr.age++;
       for (const o of this.fighters) if (o !== pr.owner && !o.dead && o.overlaps(pr.x, pr.y, pr.r)) {
         if (o.takeHit({ ...pr, owner: pr.owner, projectile: true }, this)) { pr.life = 0; }
@@ -150,12 +205,13 @@ export class Game {
     this.projectiles = this.projectiles.filter(pr => pr.life > 0);
   }
   spark(x, y, colour, n = 8, soft = false) {
+    n = Math.max(1, Math.round(n * Q.sparkMul));
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, sp = soft ? 1 + Math.random() * 2 : 3 + Math.random() * 7;
-      this.sparks.push({ x, y, z: (Math.random() - 0.5) * 40, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: soft ? 14 : 18 + Math.random() * 10, colour, r: soft ? 4 : 3 + Math.random() * 5 });
+      this.sparks.push({ x, y, px: x, py: y, z: (Math.random() - 0.5) * 40, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: soft ? 14 : 18 + Math.random() * 10, colour, r: soft ? 4 : 3 + Math.random() * 5 });
     }
   }
-  stepSparks() { for (const s of this.sparks) { s.x += s.vx; s.y += s.vy; s.vy -= 0.25; s.life--; } this.sparks = this.sparks.filter(s => s.life > 0); }
+  stepSparks() { for (const s of this.sparks) { s.px = s.x; s.py = s.y; s.x += s.vx; s.y += s.vy; s.vy -= 0.25; s.life--; } this.sparks = this.sparks.filter(s => s.life > 0); }
   shake(a) { this.cam.shake(a); }
 
   onKO(f) {
@@ -175,25 +231,28 @@ export class Game {
     p.directionalLight(255, 248, 235, -0.35, 0.75, -0.55);
     p.directionalLight(70, 80, 120, 0.6, 0.1, 0.8);
   }
-  renderWorld(fighters) {
+  renderWorld(fighters, a = 1) {
     const p = this.p;
+    const lerp = (o, k) => o['p' + k] === undefined ? o[k] : o['p' + k] + (o[k] - o['p' + k]) * a;
     p.background(...this.stage.bg);
     this.lights();
     this.stage.draw(p, this.t);
-    for (const f of fighters) f.draw(p, this.t);
+    for (const f of fighters) f.draw(p, this.t, a);
     for (const pr of this.projectiles) {
-      p.push(); p.noStroke(); p.fill(0); p.emissiveMaterial(pr.colour); p.translate(pr.x, -pr.y, 0);
-      if (pr.spin) { p.rotateZ(pr.age * 0.3); p.box(pr.r * 1.6, pr.r * 1.6, pr.r * 1.6); } else p.sphere(pr.r, 10, 8);
-      for (let i = 1; i <= 3; i++) { p.translate(-pr.vx * 1.6, pr.vy * 1.6, 0); p.sphere(pr.r * (1 - i * 0.25), 8, 6); }
+      p.push(); p.noStroke(); p.fill(0); p.emissiveMaterial(pr.colour); p.translate(lerp(pr, 'x'), -lerp(pr, 'y'), 0);
+      if (pr.spin) { p.rotateZ(pr.age * 0.3); p.box(pr.r * 1.6, pr.r * 1.6, pr.r * 1.6); } else p.sphere(pr.r, Q.sphereU, Q.sphereV);
+      for (let i = 1; i <= Q.trail; i++) { p.translate(-pr.vx * 1.6, pr.vy * 1.6, 0); p.sphere(pr.r * (1 - i * 0.25), Q.sphereU - 4, Q.sphereV - 2); }
       p.pop();
     }
-    for (const s of this.sparks) { p.push(); p.noStroke(); p.fill(0); p.emissiveMaterial(s.colour); p.translate(s.x, -s.y, s.z); p.sphere(s.r * Math.min(1, s.life / 8), 6, 4); p.pop(); }
+    for (const s of this.sparks) { p.push(); p.noStroke(); p.fill(0); p.emissiveMaterial(s.colour); p.translate(lerp(s, 'x'), -lerp(s, 'y'), s.z); p.sphere(s.r * Math.min(1, s.life / 8), Math.min(6, Q.sphereU), Math.min(4, Q.sphereV)); p.pop(); }
   }
-  render() { this.cam.apply(this.p); this.renderWorld(this.fighters); }
-  renderPreview() {
-    const p = this.p; this.projectiles = []; this.sparks = [];
-    p.noLights();
+  render(a = 1) { this.cam.apply(this.p, a); this.renderWorld(this.fighters, a); }
+  stepPreview() {
+    this.projectiles = []; this.sparks = [];
     for (const f of this.preview) { f.update(emptyPad(), this); f.grounded = true; f.y = 0; f.vy = 0; f.setState('idle'); }
+  }
+  renderPreview() {
+    const p = this.p;
     const sway = Math.sin(this.t * 0.004) * 120;
     p.camera(sway, -220, 1050, 0, -200, 0, 0, 1, 0);
     this.renderWorld(this.preview);

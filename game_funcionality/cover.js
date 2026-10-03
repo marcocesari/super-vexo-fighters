@@ -5,6 +5,7 @@ import { Fighter } from './fighter.js';
 import { solveRig, drawRig } from './rig.js';
 import { samplePose } from './poses.js';
 import { CHARACTERS, LOCKED_BUILDS } from './characters/index.js';
+import { Q } from './quality.js';
 
 // Action poses to hand out if a character doesn't name its own (`cover: { clip, frame }`).
 const POSES = [['jab', 6], ['uair', 9], ['upspecial', 12], ['fair', 12], ['ftilt', 10], ['nair', 8], ['bair', 10], ['dashattack', 9]];
@@ -55,16 +56,16 @@ export class Cover {
     // sunburst, unlit
     p.noLights();
     p.push(); p.translate(0, -180, -1600);
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 18; i++) {                                        // 18 flat planes: cheap even on a slow machine, and the burst needs the density
       p.push(); p.rotateZ(t * 0.0015 + i * Math.PI / 9); p.fill(255, 200, 60, 22 * e); p.plane(5000, 70); p.pop();
     }
     p.pop();
-    p.push(); p.translate(0, -180, -1650); p.fill(255, 220, 120, 60 * e); p.sphere(360 * (0.6 + 0.4 * e), 16, 12); p.pop();   // core glow
+    p.push(); p.translate(0, -180, -1650); p.fill(255, 220, 120, 60 * e); p.sphere(360 * (0.6 + 0.4 * e), 16, 12); p.pop();   // core glow: one big sphere, kept smooth at every level
     // floor
     p.push(); p.translate(0, 2, -200); p.rotateX(Math.PI / 2); p.fill(12, 14, 34); p.plane(6000, 3000); p.pop();
-    for (const m of this.motes) {                                                                       // drifting embers
+    for (const m of this.motes.slice(0, Q.motes)) {                                                      // drifting embers
       const y = (m.y + t * 0.6 + m.ph * 30) % 760;
-      p.push(); p.translate(m.x + Math.sin(t * 0.01 + m.ph) * 20, -y, m.z); p.fill(0); p.emissiveMaterial(255, 190, 80); p.sphere(m.s, 6, 4); p.pop();
+      p.push(); p.translate(m.x + Math.sin(t * 0.01 + m.ph) * 20, -y, m.z); p.fill(0); p.emissiveMaterial(255, 190, 80); p.sphere(m.s, Math.min(6, Q.sphereU), Math.min(4, Q.sphereV)); p.pop();
     }
 
     // the cast
