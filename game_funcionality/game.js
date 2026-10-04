@@ -119,12 +119,12 @@ export class Game {
         else { this.refreshPreview(); this.stepPreview(); }
         break;
       case 'fight':
-        if (m.start) { this.state = 'paused'; this.menu.pause(); break; }
+        if (m.start) { this.state = 'paused'; this.menu.pause(); this.music.pause(); break; }
         this.music.update(1);
         this.step();
         break;
       case 'paused':
-        if (m.start) { this.state = 'fight'; this.menu.clear(); }
+        if (m.start) { this.state = 'fight'; this.menu.clear(); this.music.resume(); }
         else if (inp.wasPressed('KeyQ') || m.back) this.toSetup();
         break;
       case 'result':

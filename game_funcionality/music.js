@@ -10,9 +10,13 @@ export class Music {
     const el = new Audio(src); el.loop = true; el.dataset.src = src; el.preload = 'auto';
     this.el = el; this.volume = volume; this.fade = fadeIn ? 0 : 1; this.fadeRate = fadeIn ? 1 / (fadeIn * 60) : 1;
     el.currentTime = offset; el.volume = 0;
-    try { await el.play(); this.apply(); return true; } catch { this.el = null; return false; }
+    try { await el.play(); this.apply(); return true; }
+    catch { if (this.el === el) this.el = null; return false; }   // only forget it if a newer track hasn't taken over
   }
   stop() { if (this.el) { this.el.pause(); this.el = null; } }
+  // hold the track where it is (pause screen) and carry on from the same spot
+  pause() { if (this.el) this.el.pause(); }
+  resume() { if (this.el && this.el.paused) this.el.play().catch(() => {}); }
   get playing() { return !!this.el && !this.el.paused; }
   time() { return this.el ? this.el.currentTime : 0; }
   // every frame: ease the duck, advance the fade
