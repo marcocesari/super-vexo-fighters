@@ -1,14 +1,14 @@
-import vexo from './vexo.js';
-import astra from './astra.js';
-import draxos from './draxos.js';
-import dell from './kingDell.js';
-import bogo from './bogoElf.js';
-import caza from './queenCaza.js';
-import breakrock from './breakrockKing.js';
-import rockheart from './rockheart.js';
-import coma from './queenComa.js';
-import headson from './headson.js';
-import belledon from './belledon.js';
+import vexo from './vexo.js?v=d78e745-1791486217';
+import astra from './astra.js?v=d78e745-1791486217';
+import draxos from './draxos.js?v=d78e745-1791486217';
+import dell from './kingDell.js?v=d78e745-1791486217';
+import bogo from './bogoElf.js?v=d78e745-1791486217';
+import caza from './queenCaza.js?v=d78e745-1791486217';
+import breakrock from './breakrockKing.js?v=d78e745-1791486217';
+import rockheart from './rockheart.js?v=d78e745-1791486217';
+import coma from './queenComa.js?v=d78e745-1791486217';
+import headson from './headson.js?v=d78e745-1791486217';
+import belledon from './belledon.js?v=d78e745-1791486217';
 
 // The whole roster from Marco's sheet.
 export const CHARACTERS = [vexo, astra, draxos, dell, bogo, caza, breakrock, rockheart, coma, headson, belledon];

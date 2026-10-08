@@ -1,7 +1,7 @@
 // King Dell — king of the Dwellers, the elf kingdom of the deep forest.
 // Long silver hair, pointed ears, leaf-green armour with gold trim, an
 // antler crown and a cape of leaves. Fights with a longbow of thorns.
-import { glow } from '../rig.js';
+import { glow } from '../rig.js?v=d78e745-1791486217';
 
 export default {
   id: 'dell', name: 'King Dell',

@@ -6,18 +6,18 @@
 // in whole 1/60 s steps: tick() may run none, one, or several times before a
 // single paint(). So a fast screen no longer speeds the fight up, and a slow
 // one no longer slows it down; it only gets fewer pictures of it.
-import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js';
-import { Input, emptyPad } from './input.js';
-import { Fighter } from './fighter.js';
-import { CPU } from './cpu.js';
-import { Camera } from './camera.js';
-import { HUD } from './hud.js';
-import { Menu } from './menu.js';
-import { Cover } from './cover.js';
-import { Intro } from './intro.js';
-import { Music } from './music.js';
-import { Sfx } from './sfx.js';
-import { Quality, Q } from './quality.js';
+import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=d78e745-1791486217';
+import { Input, emptyPad } from './input.js?v=d78e745-1791486217';
+import { Fighter } from './fighter.js?v=d78e745-1791486217';
+import { CPU } from './cpu.js?v=d78e745-1791486217';
+import { Camera } from './camera.js?v=d78e745-1791486217';
+import { HUD } from './hud.js?v=d78e745-1791486217';
+import { Menu } from './menu.js?v=d78e745-1791486217';
+import { Cover } from './cover.js?v=d78e745-1791486217';
+import { Intro } from './intro.js?v=d78e745-1791486217';
+import { Music } from './music.js?v=d78e745-1791486217';
+import { Sfx } from './sfx.js?v=d78e745-1791486217';
+import { Quality, Q } from './quality.js?v=d78e745-1791486217';
 
 // A frame that is within SNAP_TOLERANCE of a whole number of steps is counted as
 // exactly that many. Without it a 60 Hz screen drifts in and out of phase with
@@ -30,8 +30,8 @@ function snap(dtMs) {
 
 const MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
-import { CHARACTERS } from './characters/index.js';
-import { STAGES } from './maps/index.js';
+import { CHARACTERS } from './characters/index.js?v=d78e745-1791486217';
+import { STAGES } from './maps/index.js?v=d78e745-1791486217';
 
 export class Game {
   constructor(p) { this.p = p; this.t = 0; this.acc = 0; this.lastMs = 0; this.sincePaint = 0; this.repaint = true; }

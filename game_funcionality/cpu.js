@@ -1,7 +1,7 @@
 // A computer opponent that produces the same "pad" a keyboard would.
 // It thinks every few frames and holds an intent in between, so it moves
 // like a player rather than twitching. Difficulty scales reaction + aggression.
-import { emptyPad } from './input.js';
+import { emptyPad } from './input.js?v=d78e745-1791486217';
 
 export class CPU {
   constructor(level = 2) { this.level = level; this.timer = 0; this.intent = { x: 0, hold: 0 }; this.pad = emptyPad(); }

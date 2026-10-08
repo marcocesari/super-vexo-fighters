@@ -1,6 +1,6 @@
 // Vexo — captain of the Royal Space Guard, elite hacker. Colours lifted from
 // super_vexo/src/world/vexo.js so he's the same person in both games.
-import { ball, glow } from '../rig.js';
+import { ball, glow } from '../rig.js?v=d78e745-1791486217';
 
 export default {
   id: 'vexo', name: 'Vexo',

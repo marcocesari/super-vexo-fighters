@@ -1,6 +1,6 @@
 // Astra's Castle — the royal battlements on a bright afternoon. Wide and
 // friendly: a long stone walk, a raised keep balcony, towers each side.
-import { platform, drawPlatform, box, rng } from './common.js';
+import { platform, drawPlatform, box, rng } from './common.js?v=d78e745-1791486217';
 
 const P = [platform(0, 0, 1000, 80, true), platform(0, 190, 280, 18), platform(-380, 120, 180, 16), platform(380, 120, 180, 16)];
 const r = rng(3);

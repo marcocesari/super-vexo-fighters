@@ -1,7 +1,7 @@
 // Headson — an Estronic security robot, model HS-1. A big square steel head
 // with a single red visor-eye, an antenna, chrome plating, and a cannon in
 // the chest. Heavy, methodical, and very hard to knock over.
-import { glow } from '../rig.js';
+import { glow } from '../rig.js?v=d78e745-1791486217';
 
 export default {
   id: 'headson', name: 'Headson',

@@ -12,10 +12,10 @@
 //   · ledge grab, ledge jump / climb / drop, double jump refreshed on grab
 import { GRAVITY, FALL, FAST_FALL_MUL, GROUND_FRICTION, AIR_FRICTION, JUMPSQUAT, LANDING_LAG, AIRDODGE_LANDING_LAG, INPUT_BUFFER,
          LAUNCH_SPEED, LAUNCH_DECAY, TUMBLE_KB, HITLAG_CAP, SHIELD_HP, SHIELD_DRAIN, SHIELD_REGEN, SHIELD_BREAK_STUN,
-         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY, SUPER_MAX, SUPER_GAIN, SUPER_BLOCK_GAIN, SUPER_FREEZE } from './config.js';
-import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js';
-import { Q } from './quality.js';
-import { buildClips, samplePose } from './poses.js';
+         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY, SUPER_MAX, SUPER_GAIN, SUPER_BLOCK_GAIN, SUPER_FREEZE } from './config.js?v=d78e745-1791486217';
+import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js?v=d78e745-1791486217';
+import { Q } from './quality.js?v=d78e745-1791486217';
+import { buildClips, samplePose } from './poses.js?v=d78e745-1791486217';
 
 const AERIALS = { neutral: 'nair', forward: 'fair', back: 'bair', up: 'uair', down: 'dair' };
 const TILTS = { neutral: 'jab', forward: 'ftilt', back: 'ftilt', up: 'utilt', down: 'dtilt' };
