@@ -12,14 +12,14 @@
 //   · ledge grab, ledge jump / climb / drop, double jump refreshed on grab
 import { GRAVITY, FALL, FAST_FALL_MUL, GROUND_FRICTION, AIR_FRICTION, JUMPSQUAT, LANDING_LAG, AIRDODGE_LANDING_LAG, INPUT_BUFFER,
          LAUNCH_SPEED, LAUNCH_DECAY, TUMBLE_KB, HITLAG_CAP, SHIELD_HP, SHIELD_DRAIN, SHIELD_REGEN, SHIELD_BREAK_STUN,
-         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY } from './config.js';
+         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY, SUPER_MAX, SUPER_GAIN, SUPER_BLOCK_GAIN, SUPER_FREEZE } from './config.js';
 import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js';
 import { Q } from './quality.js';
 import { buildClips, samplePose } from './poses.js';
 
 const AERIALS = { neutral: 'nair', forward: 'fair', back: 'bair', up: 'uair', down: 'dair' };
 const TILTS = { neutral: 'jab', forward: 'ftilt', back: 'ftilt', up: 'utilt', down: 'dtilt' };
-const ATTACKS = new Set(['jab', 'ftilt', 'utilt', 'dtilt', 'dashattack', 'nair', 'fair', 'bair', 'uair', 'dair', 'special', 'upspecial']);
+const ATTACKS = new Set(['jab', 'ftilt', 'utilt', 'dtilt', 'dashattack', 'nair', 'fair', 'bair', 'uair', 'dair', 'special', 'upspecial', 'super']);
 const AERIAL_ATTACKS = new Set(['nair', 'fair', 'bair', 'uair', 'dair']);
 const AERIAL_LAG = { nair: 6, fair: 9, bair: 9, uair: 7, dair: 12 };
 // states you can't act out of
@@ -50,6 +50,7 @@ export class Fighter {
     this.lastHitBy = null; this.flash = 0; this.buf = { attack: 0, special: 0, jump: 0, shield: 0 };
     this.ledge = null; this.ledgeCooldown = 0; this.ledgeTime = 0; this.pad = null; this.shortHopAerial = null;
     this.dodgeDir = { x: 0, y: 0 };
+    this.superMeter = 0;                           // fills as we hit the other fighter; full = the super is ready
   }
 
   spawn(x, facing, y = 0) {
@@ -62,10 +63,11 @@ export class Fighter {
   get clip() { return this.clips[this.state]; }
   get isAttacking() { return ATTACKS.has(this.state); }
   get inAir() { return !this.grounded; }
+  get superReady() { return this.superMeter >= SUPER_MAX; }
   get busy() { return LOCKED.has(this.state) || this.state === 'ledge'; }
   get intangible() {
     const w = DODGE_WINDOW[this.state];
-    return this.invincible > 0 || (w && this.frame >= w[0] && this.frame <= w[1]) || this.state === 'ledgeclimb';
+    return this.invincible > 0 || (w && this.frame >= w[0] && this.frame <= w[1]) || this.state === 'ledgeclimb' || this.state === 'super';
   }
 
   setState(s, keepFrame = false) {
@@ -87,6 +89,8 @@ export class Fighter {
     if (pad.jumpP) this.buf.jump = INPUT_BUFFER; else if (this.buf.jump > 0) this.buf.jump--;
     if (this.hitlag > 0) { this.hitlag--; return; }              // frozen on hit, both sides
     this.frame++;
+    if (this.superReady && Math.random() < 0.2)                   // a full meter glows around the body
+      game.spark(this.x + (Math.random() - 0.5) * 60, this.y + Math.random() * this.height, this.char.colours.accent, 1, true);
 
     const stg = game.stage, st = this.stats;
     this.shielding = false;
@@ -258,6 +262,7 @@ export class Fighter {
     const c = this.clip;
     if (c.event && this.frame === c.event) this.fireEvent(game);
     if (this.state === 'upspecial') this.char.upSpecial?.update?.(this, this.frame, game);
+    if (this.state === 'super') return this.superUpdate(game);
     if (this.inAir) { this.airDrift(pad); if (pad.downP && this.vy <= 0) this.fastFalling = true; }
     else if (this.state === 'dashattack') this.vx *= 0.93;
     else this.applyFriction();
@@ -265,6 +270,7 @@ export class Fighter {
   }
 
   startSpecial(pad, game) {
+    if (!pad.up && this.superReady) return this.startSuper(game);   // a full meter turns B into the super
     if (pad.up) {
       if (this.usedUpSpecial) return;
       this.usedUpSpecial = true; this.setState('upspecial'); return;
@@ -275,6 +281,22 @@ export class Fighter {
   fireEvent(game) {
     if (this.state === 'special') this.char.special?.fire?.(this, game);
     if (this.state === 'upspecial') { this.grounded = false; this.platform = null; this.char.upSpecial?.fire?.(this, game); }
+    if (this.state === 'super') (this.char.super?.fire || superBlast)(this, game);
+  }
+
+  // --------------------------------------------------------------- super
+  addSuper(n) { if (this.state !== 'super') this.superMeter = Math.min(SUPER_MAX, this.superMeter + n); }
+  startSuper(game) {
+    this.superMeter = 0; this.fastFalling = false; this.setState('super');
+    for (const o of game.fighters || []) if (o !== this && !o.dead) o.hitlag = Math.max(o.hitlag, SUPER_FREEZE);   // everyone else freezes for the moment
+    game.onSuper?.(this);
+  }
+  // Hang in the air and gather power, then let it go.
+  superUpdate(game) {
+    const c = this.clip, col = this.char.colours.accent;
+    if (this.inAir) { this.vy = 0; this.vx *= 0.85; } else this.applyFriction();
+    if (this.frame < c.event && this.frame % 3 === 0) game.spark(this.x + (Math.random() - 0.5) * 80, this.y + this.height * (0.2 + Math.random() * 0.7), col, 2, true);
+    if (this.frame >= c.len) this.setState(this.grounded ? 'idle' : 'fall');
   }
 
   // Which way is the stick pointing, relative to the way the fighter faces?
@@ -357,6 +379,7 @@ export class Fighter {
       this.vx = away * (2 + dmg * 0.4);
       this.hitlag = Math.floor(game.hitlag(dmg) * 0.67); if (!hit.projectile) hit.owner.hitlag = this.hitlag;
       game.spark(hit.x, hit.y, '#cfe0ff', 6); game.sfx?.play('shield', { volume: 0.7 });
+      if (!hit.isSuper) hit.owner.addSuper(dmg * SUPER_BLOCK_GAIN);
       if (this.shieldHP <= 0) this.breakShield(game);
       return true;
     }
@@ -364,6 +387,7 @@ export class Fighter {
     let p;  // percent used for the formula (stamina mode: how much of the bar is gone)
     if (this.mode === MODES.STAMINA) { this.hp = Math.max(0, this.hp - dmg); p = (STAMINA_HP - this.hp) / STAMINA_HP * 120; }
     else { this.percent = Math.min(999, this.percent + dmg); p = this.percent; }
+    if (!hit.isSuper) hit.owner.addSuper(dmg * SUPER_GAIN);
 
     // Ultimate's knockback formula
     const w = this.stats.weight;
@@ -423,7 +447,7 @@ export class Fighter {
       p.translate(0, 0, -(y - gy)); p.ellipse(0, 0, 70 * sh, 26 * sh); p.pop();
     }
     const ctx = { facing: this.facing, t, fighter: this };
-    const ghost = this.intangible && this.invincible === 0;                      // dodging: drawn see-through
+    const ghost = this.intangible && this.invincible === 0 && this.state !== 'super';                      // dodging: drawn see-through
     if (this.flash > 0) {                      // hit flash: every part self-lit white
       p.push(); p.fill(40); p.emissiveMaterial(255, 235, 200); p.fill = () => {};
       drawRig(p, j, this.props, this.char.colours, this.char, ctx); delete p.fill; p.pop();
@@ -443,4 +467,14 @@ export class Fighter {
     for (const pl of this._stage?.platforms || []) if (Math.abs(this.x - pl.x) <= pl.w / 2 && pl.y <= y + 1 && pl.y > best) best = pl.y;
     return best;
   }
+}
+
+// Everyone's super unless their character file brings its own (char.super.fire):
+// a huge beam of their colour, fired from both hands.
+function superBlast(f, game) {
+  const j = f.joints(), h = f.worldJoint(j, 'rHand'), col = f.char.colours.accent;
+  game.addProjectile({ x: h.x + f.facing * 50, y: h.y, vx: f.facing * 20, vy: 0, r: 55, life: 75, colour: col,
+                       dmg: 28, angle: 38, base: 80, growth: 1.0, owner: f, isSuper: true });
+  game.spark(h.x + f.facing * 40, h.y, col, 30); game.spark(h.x + f.facing * 40, h.y, '#fff', 12);
+  game.shake?.(14); game.sfx?.play('hit_heavy', { volume: 1, pitch: 0.6 });
 }

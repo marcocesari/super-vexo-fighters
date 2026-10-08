@@ -214,6 +214,11 @@ export class Game {
   stepSparks() { for (const s of this.sparks) { s.px = s.x; s.py = s.y; s.x += s.vx; s.y += s.vy; s.vy -= 0.25; s.life--; } this.sparks = this.sparks.filter(s => s.life > 0); }
   shake(a) { this.cam.shake(a); }
 
+  onSuper(f) {
+    this.hud.announce(`${f.name.toUpperCase()} — SUPER!`, 70);
+    this.shake(8); this.sfx.play('shield_break', { volume: 0.9, pitch: 0.8 });
+  }
+
   onKO(f) {
     if (f.dead) return;
     this.spark(Math.max(this.stage.blast.l + 60, Math.min(this.stage.blast.r - 60, f.x)), Math.max(this.stage.blast.b + 60, Math.min(this.stage.blast.t - 60, f.y)), '#ffd23f', 30);

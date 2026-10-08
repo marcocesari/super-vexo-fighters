@@ -1,4 +1,4 @@
-import { MODES, STAMINA_HP } from './config.js';
+import { MODES, STAMINA_HP, SUPER_MAX } from './config.js';
 const $ = id => document.getElementById(id);
 
 export class HUD {
@@ -14,6 +14,9 @@ export class HUD {
       } else {
         html += `<div class="pct">${Math.max(0, Math.round(f.hp))}<small> HP</small></div><div class="hpbar"><div style="width:${f.hp / STAMINA_HP * 100}%"></div></div>`;
       }
+      // the super meter: fills as you land hits, glows when the super is ready
+      const ready = f.superMeter >= SUPER_MAX;
+      html += `<div class="superbar${ready ? ' ready' : ''}"><div style="width:${Math.floor(f.superMeter / SUPER_MAX * 100)}%"></div><span>${ready ? 'SUPER READY! · B' : 'SUPER'}</span></div>`;
       if (this.last[i] !== html) { el.innerHTML = html; this.last[i] = html; }
     });
     $('hud-timer').textContent = timer;

@@ -49,6 +49,14 @@ for a **dash attack**. In the air the same directions give **nair / fair /
 bair / uair / dair** (dair spikes). Special + up is the **recovery move**
 (once per airtime). Esc pauses.
 
+**Super meter**: the bar under your % / lives fills every time you hit the
+other fighter (about 40% of damage dealt fills it; hitting a shield fills a
+little). When it's full it flashes **SUPER READY!** and your next **special
+(B)** is the **super** instead: everyone else freezes, you charge up, and fire
+a giant beam in your colour (28%, KOs at high damage). You can't be hit while
+doing it. The meter is kept when you lose a life. A character file can swap in
+its own super with `super: { fire(f, game) { … } }`.
+
 **Movement, the Ultimate way**: everyone has a 3-frame jumpsquat; let go of
 jump early for a **short hop**, press jump and attack together for a
 **short-hop aerial**; one **double jump**; tap down after the apex to

@@ -66,3 +66,10 @@ export const STOCKS = 3;
 export const STAMINA_HP = 150;
 export const RESPAWN_INVINCIBLE = 120;
 export const RESPAWN_DELAY = 70;
+
+// The super meter: hitting the other fighter fills it (a blocked hit fills a
+// little); when it's full, B (neutral special) fires the super instead.
+export const SUPER_MAX = 100;
+export const SUPER_GAIN = 2.5;           // meter per 1% of damage dealt → about 40% of damage fills it
+export const SUPER_BLOCK_GAIN = 0.8;     // per 1% that hits a shield
+export const SUPER_FREEZE = 24;          // frames the other fighter is frozen when the super starts

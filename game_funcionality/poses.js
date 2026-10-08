@@ -134,6 +134,14 @@ export const CLIPS = {
     [30, { lean: -8, lHip: -10, lKnee: 10, rHip: 20, rKnee: 60, rSh: 178, rEl: 5, rOut: 0, lSh: -20, lEl: 30, lOut: 20 }],
     [44, { lHip: 15, lKnee: 25, rHip: 10, rKnee: 30, lSh: 80, lEl: 30, rSh: 90, rEl: 30, lOut: 40, rOut: 45 }]],
     hits: [hit(6, 16, 'rHand', 22, 6, 85, 42, 0.95)] },
+  // the super: crouch and charge with both hands pulled back, then thrust them out
+  super: { len: 70, event: 34, keys: [
+    [0, IDLE],
+    [10, { pelvisY: -22, lean: -10, lHip: 55, lKnee: 75, rHip: 35, rKnee: 60, lSh: -50, lEl: 100, rSh: -45, rEl: 105, lOut: 5, rOut: 5 }],
+    [30, { pelvisY: -26, lean: -14, lHip: 60, lKnee: 80, rHip: 40, rKnee: 65, lSh: -55, lEl: 110, rSh: -50, rEl: 115, lOut: 5, rOut: 5, head: 8 }],
+    [34, { pelvisY: -14, lean: 18, lHip: 50, lKnee: 40, rHip: -10, rKnee: 15, lSh: 90, lEl: 0, rSh: 92, rEl: 0, lOut: 0, rOut: 0 }],
+    [58, { pelvisY: -14, lean: 18, lHip: 50, lKnee: 40, rHip: -10, rKnee: 15, lSh: 90, lEl: 0, rSh: 92, rEl: 0, lOut: 0, rOut: 0 }],
+    [70, IDLE]] },
 };
 
 CLIPS.dash = CLIPS.run;        // the initial dash uses the run cycle

@@ -39,7 +39,9 @@ export class CPU {
 
     if (!me.busy) {
       const running = me.grounded && Math.abs(me.vx) > 10;
-      if (dist < 130 && Math.abs(dy) < 160 && rand < aggro && (!running || rand < aggro * 0.3)) {   // ATTACK (a dash attack only now and then)
+      if (me.superReady && Math.abs(dy) < 120 && dist < 700 && Math.sign(dx) === me.facing && rand < 0.05 + this.level * 0.03) {
+        pad.specialP = true;                                   // SUPER: only when the enemy is in front, at about our height
+      } else if (dist < 130 && Math.abs(dy) < 160 && rand < aggro && (!running || rand < aggro * 0.3)) {   // ATTACK (a dash attack only now and then)
         pad.attackP = true;
         if (dy > 90) pad.up = true;
         else if (dy < -90 && me.inAir) pad.down = true;

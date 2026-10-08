@@ -16,6 +16,13 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 .hud-player .stocks { font-size: 22px; letter-spacing: 3px; margin-top: 4px; }
 .hud-player .hpbar { width: 230px; height: 14px; background: #333; border: 2px solid #fff; border-radius: 4px; margin-top: 6px; overflow: hidden; }
 .hud-player .hpbar div { height: 100%; background: linear-gradient(#8f8, #2c2); transition: width .1s; }
+.hud-player .superbar { position: relative; width: 230px; height: 14px; background: #222a; border: 2px solid #fff; border-radius: 4px; margin-top: 6px; overflow: hidden; }
+.hud-player .superbar div { height: 100%; background: linear-gradient(#ffe680, #f0a020); transition: width .15s; }
+.hud-player .superbar span { position: absolute; inset: 0; font-size: 10px; font-weight: 900; letter-spacing: 2px; line-height: 14px; text-align: center; color: #fff; text-shadow: 0 1px 2px #000; }
+.hud-player .superbar.ready { border-color: #ffe680; animation: super-pulse .5s ease-in-out infinite alternate; }
+.hud-player .superbar.ready div { background: linear-gradient(90deg, #ff4fd8, #ffe680, #53ff9d, #49c8ff, #ff4fd8); background-size: 200% 100%; animation: super-flow 1s linear infinite; }
+@keyframes super-pulse { from { box-shadow: 0 0 4px #ffe680; } to { box-shadow: 0 0 16px #ffe680, 0 0 4px #fff; } }
+@keyframes super-flow { to { background-position: -200% 0; } }
 .hud-player.p0 .name { color: #ff6b6b; }
 .hud-player.p1 .name { color: #6ba8ff; }
 .announce { position: absolute; top: 34%; left: 0; right: 0; text-align: center; font-size: 96px; font-weight: 900; font-style: italic; letter-spacing: 4px; text-shadow: 0 4px 12px #000, 0 0 30px #ffd23f; }
