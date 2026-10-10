@@ -9,7 +9,7 @@
 //
 // When Marco sends a screenshot of a pose, it becomes a keyframe here (or in
 // a character's own overrides — see characters/*.js).
-import { fullPose, lerpPose, BASE_POSE } from './rig.js?v=d78e745-1791486217';
+import { fullPose, lerpPose, BASE_POSE } from './rig.js?v=48d769e-1791643329';
 
 const IDLE = { lean: 4, lSh: 16, lEl: 40, lOut: 12, rSh: 24, rEl: 55, rOut: 18, lHip: 8, lKnee: 12, rHip: -6, rKnee: 10, pelvisY: -3 };
 const hit = (from, to, joint, r, dmg, angle, base, growth) => ({ from, to, joint, r, dmg, angle, base, growth });

@@ -1,7 +1,7 @@
 // King Dell — king of the Dwellers, the elf kingdom of the deep forest.
 // Long silver hair, pointed ears, leaf-green armour with gold trim, an
 // antler crown and a cape of leaves. Fights with a longbow of thorns.
-import { glow } from '../rig.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'dell', name: 'King Dell',
@@ -39,7 +39,7 @@ export default {
     name: 'Thorn Arrow',
     fire(f, game) {
       const j = f.joints(); const h = f.worldJoint(j, 'rHand');
-      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 20, vy: 0, r: 8, life: 60, colour: '#7aa85a',
+      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 20, vy: 0, r: 12, life: 60, colour: '#7aa85a',
                            dmg: 6, angle: 20, base: 30, growth: 0.8, owner: f });
     },
   },

@@ -1,7 +1,7 @@
 // Rockheart — Breakrock King's son. Younger stone, lighter grey, with a
 // glowing crystal heart set in his chest and a crest of red crystal on his
 // head. Sturdier than most, quicker than his father.
-import { glow } from '../rig.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'rockheart', name: 'Rockheart',
@@ -31,7 +31,7 @@ export default {
     name: 'Heart Shard',
     fire(f, game) {
       const j = f.joints(); const h = f.worldJoint(j, 'rHand');
-      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 16, vy: 0, r: 10, life: 50, colour: '#ff3c4a',
+      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 16, vy: 0, r: 14, life: 50, colour: '#ff3c4a',
                            dmg: 6, angle: 30, base: 30, growth: 0.82, owner: f, spin: true });
     },
   },

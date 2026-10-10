@@ -1,6 +1,6 @@
 // Vexo — captain of the Royal Space Guard, elite hacker. Colours lifted from
 // super_vexo/src/world/vexo.js so he's the same person in both games.
-import { ball, glow } from '../rig.js?v=d78e745-1791486217';
+import { ball, glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'vexo', name: 'Vexo',
@@ -42,7 +42,7 @@ export default {
     name: 'Tablet Pulse',
     fire(f, game) {
       const j = f.joints(); const h = f.worldJoint(j, 'rHand');
-      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 15, vy: 0, r: 11, life: 55, colour: '#53ff9d',
+      game.addProjectile({ x: h.x + f.facing * 14, y: h.y, vx: f.facing * 15, vy: 0, r: 16, life: 55, colour: '#53ff9d',
                            dmg: 5, angle: 25, base: 30, growth: 0.77, owner: f, spin: true });
     },
   },

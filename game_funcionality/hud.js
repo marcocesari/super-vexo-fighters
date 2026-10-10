@@ -1,4 +1,4 @@
-import { MODES, STAMINA_HP, SUPER_MAX } from './config.js?v=d78e745-1791486217';
+import { MODES, STAMINA_HP, SUPER_MAX } from './config.js?v=48d769e-1791643329';
 const $ = id => document.getElementById(id);
 
 export class HUD {
@@ -8,7 +8,7 @@ export class HUD {
   update(fighters, mode, timer, fpsText) {
     fighters.forEach((f, i) => {
       const el = $('hud-p' + i); el.className = 'hud-player p' + i + (f.flash > 0 ? ' hit' : '');
-      let html = `<div class="name">${f.name}${f.isCPU ? ' <small>CPU</small>' : ''}</div>`;
+      let html = `<div class="name">${f.name}${f.isCPU ? ' <small>CPU</small>' : ''}</div>${f.netName ? `<div class="netname">${f.netName.replace(/[^A-Za-z0-9 ]/g, '')}</div>` : ''}`;
       if (mode === MODES.STOCK) {
         html += `<div class="pct">${f.dead ? '—' : Math.round(f.percent) + '<small>%</small>'}</div><div class="stocks">${'●'.repeat(f.stocks)}${'○'.repeat(Math.max(0, 3 - f.stocks))}</div>`;
       } else {

@@ -30,7 +30,7 @@ export default {
     name: 'Acorn Toss',
     fire(f, game) {
       const j = f.joints(); const h = f.worldJoint(j, 'rHand');
-      game.addProjectile({ x: h.x + f.facing * 10, y: h.y, vx: f.facing * 9, vy: 7, gravity: -0.4, r: 9, life: 80, colour: '#8a5a2a',
+      game.addProjectile({ x: h.x + f.facing * 10, y: h.y, vx: f.facing * 9, vy: 7, gravity: -0.4, r: 13, life: 80, colour: '#8a5a2a',
                            dmg: 5, angle: 70, base: 30, growth: 0.8, owner: f, spin: true });
     },
   },

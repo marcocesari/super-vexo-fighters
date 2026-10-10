@@ -1,8 +1,8 @@
 // Queen Caza — camel queen of the Camelloo, the camel kingdom of the sand sea.
 // A tall sand-gold camel, regal in golden silks, a high crescent headdress,
 // turquoise jewels, and a long cloak that trails like a dune in the wind.
-import { glow } from '../rig.js?v=d78e745-1791486217';
-import { camel } from './camel.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
+import { camel } from './camel.js?v=48d769e-1791643329';
 
 export default {
   id: 'caza', name: 'Queen Caza',

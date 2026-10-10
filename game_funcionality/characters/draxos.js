@@ -1,6 +1,6 @@
 // Lord Draxos — the kingdom's worst enemy. Big, slow, hits like a truck.
 // Crimson-and-black plate, horns, tattered cape, purple fire in his eyes.
-import { glow } from '../rig.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'draxos', name: 'Draxos',

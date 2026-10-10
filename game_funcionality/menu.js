@@ -1,8 +1,8 @@
 // DOM menus: title → setup (one screen, Smash-style rows) → fight → result.
-import { CHARACTERS, LOCKED } from './characters/index.js?v=d78e745-1791486217';
-import { STAGES } from './maps/index.js?v=d78e745-1791486217';
-import { MODES, SPEEDS, DEFAULT_SPEED } from './config.js?v=d78e745-1791486217';
-import { BINDING_TEXT } from './input.js?v=d78e745-1791486217';
+import { CHARACTERS, LOCKED } from './characters/index.js?v=48d769e-1791643329';
+import { STAGES } from './maps/index.js?v=48d769e-1791643329';
+import { MODES, SPEEDS, DEFAULT_SPEED } from './config.js?v=48d769e-1791643329';
+import { BINDING_TEXT } from './input.js?v=48d769e-1791643329';
 
 const $menu = () => document.getElementById('menu');
 
@@ -27,6 +27,7 @@ export class Menu {
       // same speed either way, so this only changes how pretty it looks.
       { label: 'Graphics', get: () => this.game.quality.name(), set: d => this.game.quality.cycle(d) },
       { label: 'FIGHT!', go: true },
+      { label: 'PLAY ONLINE', online: true },
     ];
   }
 
@@ -47,6 +48,7 @@ export class Menu {
     const pads = (input?.gpNames || []).length ? `🎮 connected: ${input.gpNames.join(', ')}` : '🎮 no controller — plug one in and press a button (without one, two humans share the keyboard)';
     const rows = this.rows.map((r, i) => r.go
       ? `<div class="row go ${i === this.row ? 'sel' : ''}">▶ FIGHT! ◀</div>`
+      : r.online ? `<div class="row go online ${i === this.row ? 'sel' : ''}">🌐 PLAY ONLINE</div>`
       : `<div class="row ${i === this.row ? 'sel' : ''}"><span>${r.label}</span><span class="val">◀ ${r.get()} ▶</span></div>`).join('');
     const roster = [...c.map(x => `<span>${x.name}</span>`), ...LOCKED.map(n => `<span class="locked">${n}</span>`)].join('');
     $menu().innerHTML = `<div class="setup"><h2>MATCH SETUP</h2>${rows}
@@ -56,7 +58,9 @@ export class Menu {
       <div class="help">W/S or ↑↓ pick a row · A/D or ←→ change · Enter / A to fight · Esc / Start pauses a match<br>
       Too frantic? <b>Game speed</b> down. Running slowly? <b>Graphics</b> to Low. Neither changes how the moves work.<br>${BINDING_TEXT[0]}<br>${input.kbShared() ? BINDING_TEXT[1] + '<br>' : ''}${BINDING_TEXT[2]}<br>${pads}</div></div>`;
   }
-  result(text) { $menu().innerHTML = `<div class="result">${text}</div><div class="press">ENTER / A · rematch &nbsp;&nbsp; ESC / B · setup</div>`; }
+  result(text, online = false) { $menu().innerHTML = `<div class="result">${text}</div><div class="press">ENTER / A · rematch &nbsp;&nbsp; ESC / B · ${online ? 'back to the room' : 'setup'}</div>`; }
+  resultOnline(text) { $menu().innerHTML = `<div class="result"></div><div class="press">Waiting for the host… &nbsp;&nbsp; ESC / B · leave the room</div>`; $menu().firstChild.textContent = text; }
+  pauseOnline() { $menu().innerHTML = `<div class="pause small">ONLINE MATCH</div><div class="press">The fight keeps going! &nbsp; Q / B · leave &nbsp;&nbsp; ESC / START · back to the fight</div>`; }
   pause() { $menu().innerHTML = `<div class="pause">PAUSED</div><div class="press">ESC / START · resume &nbsp;&nbsp; Q / B · quit to setup</div>`; }
   clear() { $menu().innerHTML = ''; }
 
@@ -66,7 +70,8 @@ export class Menu {
     if (up) this.row = (this.row + this.rows.length - 1) % this.rows.length;
     if (down) this.row = (this.row + 1) % this.rows.length;
     const r = this.rows[this.row];
-    if (!r.go && (left || right)) r.set(left ? -1 : 1);
+    if (!r.go && !r.online && (left || right)) r.set(left ? -1 : 1);
+    if (r.online && confirm) return 'online';
     if (confirm || (r.go && input.wasPressed('Space'))) return true;
     const pads = input.gpNames.join('|') + input.assign.join();
     if (up || down || left || right || pads !== this.lastPads) { this.lastPads = pads; this.setup(input); }

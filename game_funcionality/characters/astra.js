@@ -1,6 +1,6 @@
 // Princess Astra — not waiting to be rescued this time. Light, quick, floaty.
 // Silver-white armoured dress with gold trim, long golden hair, a tiara.
-import { glow } from '../rig.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'astra', name: 'Astra',
@@ -36,7 +36,7 @@ export default {
     name: 'Star Bolt',
     fire(f, game) {
       const j = f.joints(); const h = f.worldJoint(j, 'rHand');
-      game.addProjectile({ x: h.x + f.facing * 12, y: h.y, vx: f.facing * 17, vy: 1.5, r: 9, life: 50, colour: '#fff3a0',
+      game.addProjectile({ x: h.x + f.facing * 12, y: h.y, vx: f.facing * 17, vy: 1.5, r: 14, life: 50, colour: '#fff3a0',
                            dmg: 4, angle: 55, base: 24, growth: 0.75, owner: f, spin: true, gravity: -0.05 });
     },
   },

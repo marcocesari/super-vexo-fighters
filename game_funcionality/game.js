@@ -6,18 +6,19 @@
 // in whole 1/60 s steps: tick() may run none, one, or several times before a
 // single paint(). So a fast screen no longer speeds the fight up, and a slow
 // one no longer slows it down; it only gets fewer pictures of it.
-import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=d78e745-1791486217';
-import { Input, emptyPad } from './input.js?v=d78e745-1791486217';
-import { Fighter } from './fighter.js?v=d78e745-1791486217';
-import { CPU } from './cpu.js?v=d78e745-1791486217';
-import { Camera } from './camera.js?v=d78e745-1791486217';
-import { HUD } from './hud.js?v=d78e745-1791486217';
-import { Menu } from './menu.js?v=d78e745-1791486217';
-import { Cover } from './cover.js?v=d78e745-1791486217';
-import { Intro } from './intro.js?v=d78e745-1791486217';
-import { Music } from './music.js?v=d78e745-1791486217';
-import { Sfx } from './sfx.js?v=d78e745-1791486217';
-import { Quality, Q } from './quality.js?v=d78e745-1791486217';
+import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=48d769e-1791643329';
+import { Input, emptyPad } from './input.js?v=48d769e-1791643329';
+import { Fighter } from './fighter.js?v=48d769e-1791643329';
+import { CPU } from './cpu.js?v=48d769e-1791643329';
+import { Camera } from './camera.js?v=48d769e-1791643329';
+import { HUD } from './hud.js?v=48d769e-1791643329';
+import { Menu } from './menu.js?v=48d769e-1791643329';
+import { Cover } from './cover.js?v=48d769e-1791643329';
+import { Intro } from './intro.js?v=48d769e-1791643329';
+import { Music } from './music.js?v=48d769e-1791643329';
+import { Sfx } from './sfx.js?v=48d769e-1791643329';
+import { Quality, Q } from './quality.js?v=48d769e-1791643329';
+import { Online } from './online.js?v=48d769e-1791643329';
 
 // A frame that is within SNAP_TOLERANCE of a whole number of steps is counted as
 // exactly that many. Without it a 60 Hz screen drifts in and out of phase with
@@ -30,8 +31,8 @@ function snap(dtMs) {
 
 const MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
-import { CHARACTERS } from './characters/index.js?v=d78e745-1791486217';
-import { STAGES } from './maps/index.js?v=d78e745-1791486217';
+import { CHARACTERS } from './characters/index.js?v=48d769e-1791643329';
+import { STAGES } from './maps/index.js?v=48d769e-1791643329';
 
 export class Game {
   constructor(p) { this.p = p; this.t = 0; this.acc = 0; this.lastMs = 0; this.sincePaint = 0; this.repaint = true; }
@@ -47,6 +48,7 @@ export class Game {
     this.input = new Input(); this.hud = new HUD(); this.menu = new Menu(this); this.cam = new Camera();
     this.fighters = []; this.projectiles = []; this.sparks = [];
     this.stage = STAGES[0];
+    this.online = new Online(this);
     this.cover = new Cover(); this.music = new Music(); this.intro = new Intro(this.music); this.sfx = new Sfx();
     this.refreshPreview();
     this.beginTitle();
@@ -65,16 +67,18 @@ export class Game {
     this.previewStage = this.stage;
   }
 
-  startMatch() {
-    const c = this.menu.cfg; this.stage = STAGES[c.stage]; this.mode = c.mode;
+  // `net` is the Online host when the other fighter is a player on another device.
+  startMatch(net = null) {
+    const c = this.menu.cfg; this.stage = STAGES[c.stage]; this.mode = c.mode; this.net = net;
     this.fighters = [CHARACTERS[c.p1], CHARACTERS[c.p2]].map((ch, i) => {
-      const f = new Fighter(ch, i, c.mode); f._stage = this.stage; f.isCPU = i === 1 && c.p2cpu;
+      const f = new Fighter(ch, i, c.mode); f._stage = this.stage; f.isCPU = i === 1 && c.p2cpu && !net;
       f.spawn(this.stage.spawns[i][0], i === 0 ? 1 : -1, 260); return f;
     });
-    this.cpu = c.p2cpu ? new CPU(c.cpuLevel) : null;
+    this.cpu = c.p2cpu && !net ? new CPU(c.cpuLevel) : null;
     this.projectiles = []; this.sparks = []; this.frames = 0; this.endTimer = 0; this.winner = null;
     this.cam = new Camera(); this.cam.x = 0; this.cam.y = 200;
     this.music.play(BATTLE_MUSIC, { volume: 0.5, fadeIn: 0.5 });
+    this.netHint = false;
     this.menu.clear(); this.hud.show(true); this.hud.announce('GO!', 60); this.state = 'fight';
   }
 
@@ -89,7 +93,7 @@ export class Game {
     this.sincePaint += real;                              // real time, for the frame-rate watchdog
     // Simulated time. A long stall is not fast-forwarded, and the fight (never
     // the menus) is stretched by the chosen game speed.
-    const slowed = this.state === 'fight' || this.state === 'result';
+    const slowed = this.state === 'fight' || this.state === 'result' || this.state === 'netview';
     this.acc += snap(Math.min(real, MAX_FRAME_MS)) * (slowed ? this.speed() : 1);
     let steps = Math.floor(this.acc / STEP_MS);
     if (steps > MAX_CATCHUP_STEPS) { steps = MAX_CATCHUP_STEPS; this.acc = 0; }
@@ -115,13 +119,28 @@ export class Game {
         break;
       case 'setup':
         this.music.update(1);
-        if (this.menu.handleSetupKey(inp)) this.startMatch();
+        const go = this.menu.handleSetupKey(inp);
+        if (go === 'online') this.online.open();
+        else if (go) this.startMatch();
         else { this.refreshPreview(); this.stepPreview(); }
         break;
       case 'fight':
-        if (m.start) { this.state = 'paused'; this.menu.pause(); this.music.pause(); break; }
+        if (this.net) {                                   // online: the fight can't stop for everyone, so Start only offers to leave
+          if (m.start) { this.netHint = !this.netHint; this.netHint ? this.menu.pauseOnline() : this.menu.clear(); }
+          if (this.netHint && (inp.wasPressed('KeyQ') || m.back)) { this.netHint = false; this.menu.clear(); this.net.backToRoom(); break; }
+        } else if (m.start) { this.state = 'paused'; this.menu.pause(); this.music.pause(); break; }
         this.music.update(1);
         this.step();
+        this.net?.afterStep();
+        break;
+      case 'online':                                      // the online menus, with the fighters idling behind
+        this.music.update(1);
+        this.online.tick(inp);
+        if (this.state === 'online') { this.refreshPreview(); this.stepPreview(); }
+        break;
+      case 'netview':                                     // someone else's fight, as a guest or a watcher
+        this.music.update(1);
+        this.online.viewTick(inp);
         break;
       case 'paused':
         if (m.start) { this.state = 'fight'; this.menu.clear(); this.music.resume(); }
@@ -130,7 +149,9 @@ export class Game {
       case 'result':
         this.music.update(0.35);                                  // battle music sits back under the result
         this.stepIdle();
-        if (m.confirm) this.startMatch();
+        this.net?.afterStep();
+        if (this.net) { if (m.confirm) this.net.rematch(); else if (m.back) this.net.backToRoom(); }
+        else if (m.confirm) this.startMatch();
         else if (m.back) this.toSetup();
         break;
     }
@@ -141,25 +162,28 @@ export class Game {
   paint(a = 1) {
     switch (this.state) {
       case 'title': this.cover.draw(this.p, this, 0.25 + 0.75 * this.intro.build); break;
-      case 'setup': this.renderPreview(); break;
+      case 'setup': case 'online': this.renderPreview(); break;
       default: this.render(a);
     }
   }
 
   beginTitle() { this.state = 'title'; this.menu.title(); this.intro.start(); }
-  toSetup() { this.hud.show(false); this.state = 'setup'; this.menu.setup(this.input); this.refreshPreview(); this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
+  toSetup() { this.net = null; this.hud.show(false); this.state = 'setup'; this.menu.setup(this.input); this.refreshPreview(); this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
 
   // ------------------------------------------------------------ simulation
   step() {
     const [a, b] = this.fighters;
-    const pads = [this.input.pad(0), this.cpu ? this.cpu.think(b, a, this.stage) : this.input.pad(1)];
+    const pads = [this.input.pad(0), this.net ? this.net.remotePad() : this.cpu ? this.cpu.think(b, a, this.stage) : this.input.pad(1)];
     if (this.endTimer === 0) this.fighters.forEach((f, i) => f.update(pads[i], this));
     else { this.fighters.forEach(f => { if (!f.dead) f.update({ ...pads[0], x: 0, left: false, right: false, up: false, down: false, attack: false, special: false, shield: false, upP: false, downP: false, attackP: false, specialP: false, shieldP: false }, this); }); }
     this.separateBodies(); this.resolveHits(); this.stepProjectiles(); this.stepSparks();
     this.cam.update(this.fighters, this.stage);
     this.frames++;
     this.hud.update(this.fighters, this.mode, this.clock(), this.quality.label());
-    if (this.endTimer > 0 && --this.endTimer === 0) { this.state = 'result'; this.menu.result(`${this.winner.name.toUpperCase()} WINS!`); }
+    if (this.endTimer > 0 && --this.endTimer === 0) {
+      const text = `${this.winner.name.toUpperCase()} WINS!`;
+      this.state = 'result'; this.menu.result(text, !!this.net); this.net?.onMatchOver(text);
+    }
   }
   stepIdle() { this.fighters.forEach(f => { if (!f.dead) f.update(emptyPad(), this); }); this.stepSparks(); this.stepProjectiles(); this.cam.update(this.fighters, this.stage); this.hud.update(this.fighters, this.mode, this.clock()); }
   clock() { const s = Math.floor(this.frames / 60); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
@@ -197,6 +221,7 @@ export class Game {
     for (const pr of this.projectiles) {
       pr.px = pr.x; pr.py = pr.y;
       pr.x += pr.vx; pr.y += pr.vy; pr.vy += pr.gravity; pr.life--; pr.age++;
+      if (pr.age % 3 === 0) this.spark(pr.x - pr.vx, pr.y - pr.vy, pr.colour, 1, true);     // a sparkly trail, so shots are easy to follow
       for (const o of this.fighters) if (o !== pr.owner && !o.dead && o.overlaps(pr.x, pr.y, pr.r)) {
         if (o.takeHit({ ...pr, owner: pr.owner, projectile: true }, this)) { pr.life = 0; }
       }
@@ -245,6 +270,10 @@ export class Game {
     for (const f of fighters) f.draw(p, this.t, a);
     for (const pr of this.projectiles) {
       p.push(); p.noStroke(); p.fill(0); p.emissiveMaterial(pr.colour); p.translate(lerp(pr, 'x'), -lerp(pr, 'y'), 0);
+      // a see-through glow around every shot, so even a small one reads from far away
+      const c = p.color(pr.colour), pulse = 1 + 0.12 * Math.sin(pr.age * 0.6);
+      p.push(); p.fill(p.red(c), p.green(c), p.blue(c), 90); p.emissiveMaterial(c); p.sphere(Math.max(pr.r * 2.6, 40) * pulse, Q.sphereU, Q.sphereV); p.pop();
+      p.push(); p.fill(0); p.emissiveMaterial(255); p.sphere(pr.r * 0.7, Q.sphereU, Q.sphereV); p.pop();   // white-hot core
       if (pr.spin) { p.rotateZ(pr.age * 0.3); p.box(pr.r * 1.6, pr.r * 1.6, pr.r * 1.6); } else p.sphere(pr.r, Q.sphereU, Q.sphereV);
       for (let i = 1; i <= Q.trail; i++) { p.translate(-pr.vx * 1.6, pr.vy * 1.6, 0); p.sphere(pr.r * (1 - i * 0.25), Q.sphereU - 4, Q.sphereV - 2); }
       p.pop();

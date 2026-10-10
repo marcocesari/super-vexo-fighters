@@ -1,7 +1,7 @@
 // Headson — an Estronic security robot, model HS-1. A big square steel head
 // with a single red visor-eye, an antenna, chrome plating, and a cannon in
 // the chest. Heavy, methodical, and very hard to knock over.
-import { glow } from '../rig.js?v=d78e745-1791486217';
+import { glow } from '../rig.js?v=48d769e-1791643329';
 
 export default {
   id: 'headson', name: 'Headson',
@@ -35,7 +35,7 @@ export default {
   special: {
     name: 'Head Cannon',
     fire(f, game) {
-      game.addProjectile({ x: f.x + f.facing * 40, y: f.y + 120 * f.props.scale, vx: f.facing * 18, vy: 0, r: 13, life: 55, colour: '#ff3b3b',
+      game.addProjectile({ x: f.x + f.facing * 40, y: f.y + 120 * f.props.scale, vx: f.facing * 18, vy: 0, r: 16, life: 55, colour: '#ff3b3b',
                            dmg: 9, angle: 25, base: 36, growth: 0.9, owner: f });
       game.shake(4);
     },
