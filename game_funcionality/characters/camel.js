@@ -4,7 +4,7 @@
 // big lashed eyes, floppy ears, a hump on the back and a tufted tail.
 //   C.skin  fur      C.boots  hooves
 //   o.dark  muzzle / tail colour   o.eye  iris   o.sleepy  half-closed lids
-import { seg, ball } from '../rig.js?v=781da9a-1791645966';
+import { seg, ball } from '../rig.js?v=611e15a-1791647664';
 
 export function camel(p, j, P, C, ctx, o = {}) {
   const s = P.scale, f = ctx.facing, h = j.head, fur = C.skin, dark = o.dark || C.boots;

@@ -77,8 +77,8 @@ location**), and only "Use" brings up the browser's popup. With location, the
 game turns it into a rough ~20 km area and only ever shares that, never the
 exact spot. Without it, every room still has a **4-letter code** (no I or O) to
 tell a friend. If the browser has location blocked, the game explains how to
-switch it on and carries on by itself the moment it's allowed. Rooms in
-your area and the ones around it are listed nearest first. Asking to join pops
+switch it on and carries on by itself the moment it's allowed. Rooms within
+about 100 km are listed nearest first. Asking to join pops
 up on the host's screen (**Accept / Decline**); two fight, anyone else accepted
 can watch. Names are made up by the game ("Swift Rockheart 42") so nobody types
 anything. There is no server: browsers find each other through public Nostr

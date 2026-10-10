@@ -1,4 +1,4 @@
-import { MODES, STAMINA_HP, SUPER_MAX } from './config.js?v=781da9a-1791645966';
+import { MODES, STAMINA_HP, SUPER_MAX } from './config.js?v=611e15a-1791647664';
 const $ = id => document.getElementById(id);
 
 export class HUD {

@@ -2,7 +2,7 @@
 // A walking boulder: dark basalt skin split by glowing lava cracks, a crown
 // of jagged obsidian, fists like anvils. Slowest fighter in the game, and
 // nobody hits harder.
-import { glow, ball } from '../rig.js?v=781da9a-1791645966';
+import { glow, ball } from '../rig.js?v=611e15a-1791647664';
 
 export default {
   id: 'breakrock', name: 'Breakrock King',

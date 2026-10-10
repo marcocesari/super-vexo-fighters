@@ -1,8 +1,8 @@
 // DOM menus: title → setup (one screen, Smash-style rows) → fight → result.
-import { CHARACTERS, LOCKED } from './characters/index.js?v=781da9a-1791645966';
-import { STAGES } from './maps/index.js?v=781da9a-1791645966';
-import { MODES, SPEEDS, DEFAULT_SPEED } from './config.js?v=781da9a-1791645966';
-import { BINDING_TEXT } from './input.js?v=781da9a-1791645966';
+import { CHARACTERS, LOCKED } from './characters/index.js?v=611e15a-1791647664';
+import { STAGES } from './maps/index.js?v=611e15a-1791647664';
+import { MODES, SPEEDS, DEFAULT_SPEED } from './config.js?v=611e15a-1791647664';
+import { BINDING_TEXT } from './input.js?v=611e15a-1791647664';
 
 const $menu = () => document.getElementById('menu');
 

@@ -1,6 +1,6 @@
 // Princess Astra — not waiting to be rescued this time. Light, quick, floaty.
 // Silver-white armoured dress with gold trim, long golden hair, a tiara.
-import { glow } from '../rig.js?v=781da9a-1791645966';
+import { glow } from '../rig.js?v=611e15a-1791647664';
 
 export default {
   id: 'astra', name: 'Astra',

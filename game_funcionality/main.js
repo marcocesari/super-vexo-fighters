@@ -1,4 +1,4 @@
-import { Game } from './game.js?v=781da9a-1791645966';
+import { Game } from './game.js?v=611e15a-1791647664';
 
 new p5(p => {
   const game = new Game(p); window.game = game;   // handy for poking at it from the console

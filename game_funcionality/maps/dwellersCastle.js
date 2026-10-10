@@ -1,6 +1,6 @@
 // Dwellers Castle — the elf kingdom's home, a castle grown out of the great
 // trees, at dusk. Wooden walkways, uneven branches, lanterns in the leaves.
-import { platform, drawPlatform, box, rng } from './common.js?v=781da9a-1791645966';
+import { platform, drawPlatform, box, rng } from './common.js?v=611e15a-1791647664';
 
 const P = [platform(0, 0, 860, 60, true), platform(-310, 170, 210, 16), platform(240, 250, 190, 16), platform(60, 400, 150, 14)];
 const r = rng(11);

@@ -4,11 +4,12 @@
 // relays (the Trystero library does the talking) and then connect directly,
 // browser to browser (WebRTC). The relays only ever carry the "hello".
 //
-// "Near you" = the same rough area. The browser asks for the location once; the
-// game turns it into a 4-letter geohash cell (about 20 × 30 km) and from then on
-// only that cell is ever shared — never the exact spot. A host announces their
-// room in the lobby named after their cell; a finder listens in their own cell
-// and the 8 around it, and the list is sorted by how far apart the cells are.
+// "Near you" = within NEARBY_KM (100 km). The browser asks for the location
+// once; the game turns it into a 4-letter geohash cell (about 20 × 30 km) and
+// from then on only that cell is ever shared — never the exact spot. Rooms are
+// announced on bigger 3-letter "boards" (about 156 km tall, 110 km wide in
+// Italy); a finder listens on every board that touches the 100 km circle around
+// them, keeps the rooms whose cell is within 100 km of theirs, nearest first.
 //
 // Location is always the player's choice: the game asks in its own screen first
 // ("Use my location" / "Don't use location"), and only "Use" makes the browser's
@@ -21,18 +22,20 @@
 // The fight itself runs only on the host. The guest sends their pad every step
 // and gets back a snapshot of everything to draw, so the two screens can never
 // drift apart. Watchers get the same snapshots and send nothing.
-import { CHARACTERS } from './characters/index.js?v=781da9a-1791645966';
-import { STAGES } from './maps/index.js?v=781da9a-1791645966';
-import { MODES, SPEEDS } from './config.js?v=781da9a-1791645966';
-import { Fighter } from './fighter.js?v=781da9a-1791645966';
-import { emptyPad } from './input.js?v=781da9a-1791645966';
-import { samplePose } from './poses.js?v=781da9a-1791645966';
-import { lerpPose } from './rig.js?v=781da9a-1791645966';
-import { Camera } from './camera.js?v=781da9a-1791645966';
+import { CHARACTERS } from './characters/index.js?v=611e15a-1791647664';
+import { STAGES } from './maps/index.js?v=611e15a-1791647664';
+import { MODES, SPEEDS } from './config.js?v=611e15a-1791647664';
+import { Fighter } from './fighter.js?v=611e15a-1791647664';
+import { emptyPad } from './input.js?v=611e15a-1791647664';
+import { samplePose } from './poses.js?v=611e15a-1791647664';
+import { lerpPose } from './rig.js?v=611e15a-1791647664';
+import { Camera } from './camera.js?v=611e15a-1791647664';
 
 const TRYSTERO = 'https://cdn.jsdelivr.net/npm/trystero@0.26.0/+esm';
 const APP = { appId: 'super-vexo-fighters-online-v1' };
 const AD_EVERY = 2000, AD_TTL = 7000, JOIN_TIMEOUT = 20000;
+const NEARBY_KM = 100;                          // how far away a room can be and still be listed
+const BOARD = 3;                                // geohash length of the lobby boards (the shared cell itself is 4)
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3', MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const $menu = () => document.getElementById('menu');
 
@@ -56,11 +59,18 @@ function cellBox(h) {
   }
   return { lat: (la[0] + la[1]) / 2, lon: (lo[0] + lo[1]) / 2, dLat: la[1] - la[0], dLon: lo[1] - lo[0] };
 }
-function cellsAround(h) {                      // the cell and its 8 neighbours
-  const c = cellBox(h), out = new Set();
-  for (const i of [-1, 0, 1]) for (const j of [-1, 0, 1]) {
-    let lon = c.lon + j * c.dLon; if (lon > 180) lon -= 360; if (lon < -180) lon += 360;
-    out.add(geohash(Math.max(-89.9, Math.min(89.9, c.lat + i * c.dLat)), lon, h.length));
+// Every board that touches the circle of `km` around this cell: walk a grid over
+// the circle's bounding box (plus the cell's own size, since we only know the
+// cell) in steps smaller than a board, and collect the boards it lands on.
+function boardsWithin(h, km) {
+  const c = cellBox(h), b = cellBox(h.slice(0, BOARD)), out = new Set();
+  const dLat = km / 111 + c.dLat, dLon = km / (111 * Math.max(0.1, Math.cos(c.lat * Math.PI / 180))) + c.dLon;
+  for (let lat = c.lat - dLat; lat <= c.lat + dLat + 1e-9; lat += Math.min(b.dLat / 2, dLat)) {
+    for (let lon = c.lon - dLon; lon <= c.lon + dLon + 1e-9; lon += Math.min(b.dLon / 2, dLon)) {
+      const L = lon > 180 ? lon - 360 : lon < -180 ? lon + 360 : lon;
+      out.add(geohash(Math.max(-89.9, Math.min(89.9, lat)), L, BOARD));
+    }
+    out.add(geohash(Math.max(-89.9, Math.min(89.9, lat)), c.lon + dLon, BOARD));     // the far edge too
   }
   return [...out];
 }
@@ -241,7 +251,7 @@ export class Online {
     this.act.pad.onMessage = (d, { peerId }) => { if (this.p2?.id === peerId) this.pushPad(unpackPad(d)); };
     this.room.onPeerLeave = id => this.onLeave(id);
     // the lobbies: the room code always, and everyone nearby when we know the area
-    const names = ['code-' + this.code, ...(this.cell ? ['lobby-' + this.cell] : [])];
+    const names = ['code-' + this.code, ...(this.cell ? ['board-' + this.cell.slice(0, BOARD)] : [])];
     const ads = names.map(n => {
       const lobby = T.joinRoom(APP, n); this.lobbies.push(lobby);
       const ad = lobby.makeAction('ad');
@@ -342,11 +352,11 @@ export class Online {
   // ------------------------------------------------------------ finding
   find() {
     const T = this.T; this.leaveAll(); this.role = 'finder'; this.ads = new Map();
-    for (const c of cellsAround(this.cell)) {
-      const lobby = T.joinRoom(APP, 'lobby-' + c); this.lobbies.push(lobby);
+    for (const c of boardsWithin(this.cell, NEARBY_KM)) {
+      const lobby = T.joinRoom(APP, 'board-' + c); this.lobbies.push(lobby);
       const ad = lobby.makeAction('ad');
       ad.onMessage = (d, { peerId }) => {
-        const r = readAd(d, peerId); if (!r || !r.cell) return;
+        const r = readAd(d, peerId); if (!r || !r.cell || cellKm(this.cell, r.cell) > NEARBY_KM) return;   // a big board reaches further than 100 km
         this.ads.set(peerId, r);
         if (this.screen === 'browse') this.render();
       };
@@ -502,9 +512,9 @@ export class Online {
   info() {
     const C = CHARACTERS, you = `You are <b>${esc(this.name)}</b>.`;
     switch (this.screen) {
-      case 'home': return `${you}<br>Find people <b>near you</b>, or share a <b>room code</b> with a friend.<br>Two fight, everyone else can watch. The host decides who gets in.`;
+      case 'home': return `${you}<br>Find people <b>within about ${NEARBY_KM} km</b>, or share a <b>room code</b> with a friend.<br>Two fight, everyone else can watch. The host decides who gets in.`;
       case 'wait': return this.note;                       // only ever our own text
-      case 'askloc': return `${this.note ? `<b>${esc(this.note)}</b><br><br>` : ''}📍 To find players <b>near you</b>, the game needs your <b>rough area</b> (about 20 km).<br>
+      case 'askloc': return `${this.note ? `<b>${esc(this.note)}</b><br><br>` : ''}📍 To find players <b>within about ${NEARBY_KM} km</b>, the game needs your <b>rough area</b>.<br>Only an area about 20 km across is shared.<br>
         Your exact location is <b>never</b> shared.<br><br>Pick <b>Use my location</b>, then press <b>Allow</b> when the browser asks.<br>
         Or skip it: rooms also have a <b>4-letter code</b> you can tell a friend.`;
       case 'blocked': return `🚫 This browser is <b>blocking location</b> for the game, and a website isn't allowed to ask again by itself.<br>
@@ -514,7 +524,7 @@ export class Online {
         <div class="code-boxes">${[0, 1, 2, 3].map(i => `<span>${this.typed?.[i] || ''}</span>`).join('')}</div>Backspace to fix a letter · Enter to join`;
       case 'error': return esc(this.note);
       case 'declined': return 'The host said no this time.';
-      case 'browse': return this.ads.size ? `${you} Rooms near you (←/→ choose play or watch, Enter to ask):` : `${you}<br><span class="searching">Looking for rooms nearby…</span><br>Nobody's hosting near you right now. Leave this open — rooms show up here as soon as someone makes one.<br>Got a friend's code? Go back and pick <b>Join with a room code</b>.`;
+      case 'browse': return this.ads.size ? `${you} Rooms within ${NEARBY_KM} km (←/→ choose play or watch, Enter to ask):` : `${you}<br><span class="searching">Looking for rooms within ${NEARBY_KM} km…</span><br>Nobody's hosting within ${NEARBY_KM} km right now. Leave this open — rooms show up here as soon as someone makes one.<br>Got a friend's code? Go back and pick <b>Join with a room code</b>.`;
       case 'asking': return !this.hostSeen ? `Connecting to <b>${esc(this.target.name)}</b>'s room…`
         : `Asking <b>${esc(this.target.name)}</b> to let you ${this.target.want === 'play' ? 'play' : 'watch'}…${this.target.fighting ? '<br>They\'re in a match — they\'ll see your request when it ends.' : ''}`;
       case 'room': {
