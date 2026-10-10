@@ -10,20 +10,25 @@
 // room in the lobby named after their cell; a finder listens in their own cell
 // and the 8 around it, and the list is sorted by how far apart the cells are.
 //
+// Location is always the player's choice: the game asks in its own screen first
+// ("Use my location" / "Don't use location"), and only "Use" makes the browser's
+// own popup appear. Without location you can still play: every room has a
+// 4-letter code to tell a friend, who types it in.
+//
 // Who gets in: anyone asking pops up on the host's screen — Accept or Decline.
 // Names are made up by the game ("Swift Rockheart 42"), so nobody types anything.
 //
 // The fight itself runs only on the host. The guest sends their pad every step
 // and gets back a snapshot of everything to draw, so the two screens can never
 // drift apart. Watchers get the same snapshots and send nothing.
-import { CHARACTERS } from './characters/index.js?v=48d769e-1791643329';
-import { STAGES } from './maps/index.js?v=48d769e-1791643329';
-import { MODES, SPEEDS } from './config.js?v=48d769e-1791643329';
-import { Fighter } from './fighter.js?v=48d769e-1791643329';
-import { emptyPad } from './input.js?v=48d769e-1791643329';
-import { samplePose } from './poses.js?v=48d769e-1791643329';
-import { lerpPose } from './rig.js?v=48d769e-1791643329';
-import { Camera } from './camera.js?v=48d769e-1791643329';
+import { CHARACTERS } from './characters/index.js?v=781da9a-1791645966';
+import { STAGES } from './maps/index.js?v=781da9a-1791645966';
+import { MODES, SPEEDS } from './config.js?v=781da9a-1791645966';
+import { Fighter } from './fighter.js?v=781da9a-1791645966';
+import { emptyPad } from './input.js?v=781da9a-1791645966';
+import { samplePose } from './poses.js?v=781da9a-1791645966';
+import { lerpPose } from './rig.js?v=781da9a-1791645966';
+import { Camera } from './camera.js?v=781da9a-1791645966';
 
 const TRYSTERO = 'https://cdn.jsdelivr.net/npm/trystero@0.26.0/+esm';
 const APP = { appId: 'super-vexo-fighters-online-v1' };
@@ -66,6 +71,10 @@ function cellKm(a, b) {
 }
 const distText = (a, b) => a === b ? 'in your area' : `about ${Math.max(10, Math.round(cellKm(a, b) / 10) * 10)} km away`;
 const okCell = s => typeof s === 'string' && /^[0-9b-hjkmnp-z]{4}$/.test(s);
+
+// ---------------------------------------------------------------- room codes (no I or O: too easy to mix up with 1 and 0)
+const CODE_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const newCode = () => Array.from({ length: 4 }, () => CODE_ABC[Math.floor(Math.random() * CODE_ABC.length)]).join('');
 
 // ---------------------------------------------------------------- names
 const ADJ = ['Swift', 'Brave', 'Mighty', 'Sneaky', 'Cosmic', 'Lucky', 'Turbo', 'Sleepy', 'Fiery', 'Icy', 'Rocky', 'Shiny', 'Wild', 'Silent', 'Royal', 'Electric', 'Jolly', 'Golden'];
@@ -118,6 +127,30 @@ const unpackShot = a => {
   return { x, y, vx, vy, px: x - vx, py: y - vy, r: Math.max(1, Math.min(80, num(a[4], 10))), colour: okCol(a[5]), spin: !!a[6], age: num(a[7]) };
 };
 
+// Chrome (and Chromebooks) get exact, step-by-step help for switching location
+// back on, matching what Chrome shows. Edge and Opera look like Chrome but put
+// things elsewhere, so they get the general version.
+const isChrome = () => /Chrome\//.test(navigator.userAgent) && !/Edg\/|OPR\/|SamsungBrowser/.test(navigator.userAgent);
+const isChromebook = () => /CrOS/.test(navigator.userAgent);
+const isMac = () => /Macintosh/.test(navigator.userAgent);
+const SLIDERS = '<svg class="chrome-ico" viewBox="0 0 24 24"><path d="M3 7h9M16 7h5M3 17h5M12 17h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="7" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2.3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+// Steps follow Google's own help pages (Chromebook Help 114662 and 13128177, Oct 2026).
+const CHROME_STEPS = `<div class="steps"><b>Switch it on in Chrome:</b><ol>
+  <li>Click the ${SLIDERS} icon at the <b>left end of the address bar</b>, just before the web address (<b>View site information</b>).</li>
+  <li>If you see a <b>Location</b> switch, turn it <b>on</b>. If not, pick <b>Site settings</b> and set <b>Location</b> to <b>Allow</b>.</li>
+  <li>Or press <b>Reset permissions</b> there — then the game can ask you again.</li></ol>
+  <b>Still not working?</b> The ${isChromebook() ? 'Chromebook' : 'computer'} itself may have location off:<br>${isChromebook()
+    ? '⚙️ Click the <b>time</b> at the bottom right → <b>Settings</b> → <b>Privacy and security</b> → <b>Privacy controls</b> → <b>Location access</b> → <b>Change access</b> → pick <b>Allowed</b>.'
+    : isMac() ? '⚙️ Mac <b>System Settings</b> → <b>Privacy &amp; Security</b> → <b>Location Services</b> → turn on <b>Google Chrome</b>.'
+    : '⚙️ The computer\'s <b>Settings</b> → <b>Privacy</b> → <b>Location</b> → let Chrome use it.'}</div>`;
+
+// A room's announcement, checked. `cell` is null for a room found by its code only.
+function readAd(d, peerId) {
+  if (!d || !okName(d.name) || (d.cell !== null && !okCell(d.cell))) return null;
+  return { id: peerId, name: d.name, cell: d.cell, fighter: int(d.fighter, 0, CHARACTERS.length - 1, 0), stage: int(d.stage, 0, STAGES.length - 1, 0),
+           open: !!d.open, watchers: int(d.watchers, 0, 99, 0), fighting: !!d.fighting, seen: Date.now(), want: d.open && !d.fighting ? 'play' : 'watch' };
+}
+
 export class Online {
   constructor(game) {
     this.game = game; this.name = myName();
@@ -154,18 +187,50 @@ export class Online {
         err => fail(err), { enableHighAccuracy: false, timeout: 15000, maximumAge: 3600000 });
     });
   }
-  async prepare() {
-    this.go('wait', 'Finding your rough area…');
-    try { await this.locate(); } catch (e) { this.go('noloc'); return false; }
+  // ------------------------------------------------------------ location: the player decides
+  // `next` is what to do once that's settled: 'host' or 'find'.
+  async area(next) {
+    this.next = next;
+    if (this.cell) return this.afterArea();                 // already know the area (only ever the rough cell)
+    const st = await this.permState();
+    if (st === 'granted') return this.useLocation();      // said yes before: no need to ask again
+    if (st === 'denied') return this.go('blocked');
+    this.go('askloc');
+  }
+  // What the browser currently allows. When it is blocked, watch for the player
+  // switching it on in the browser and carry on by ourselves.
+  async permState() {
+    try {
+      const status = await navigator.permissions.query({ name: 'geolocation' });
+      status.onchange = () => { if (status.state !== 'denied' && this.screen === 'blocked') this.useLocation(); };
+      return status.state;
+    } catch { return 'prompt'; }
+  }
+  async useLocation() {
+    this.go('wait', 'Finding your rough area…<br>If the browser asks, press <b>Allow</b>.');
+    try { await this.locate(); }
+    catch (e) {
+      if (e?.code === 1) return this.go((await this.permState()) === 'denied' ? 'blocked' : 'askloc', 'The browser didn\'t get a yes. You can try again, or play with a room code.');
+      return this.go('askloc', 'Couldn\'t find your area this time (no signal?). Try again, or play with a room code.');
+    }
+    this.afterArea();
+  }
+  noLocation() { this.noLoc = true; this.afterArea(); }
+  async afterArea() {
+    if (!await this.connect()) return;
+    if (this.next === 'host') this.host();
+    else if (this.cell) this.find();
+    else { this.typed = ''; this.go('code'); }              // no location: finding = typing a friend's code
+  }
+  async connect() {
     this.go('wait', 'Connecting…');
-    try { await this.lib(); } catch (e) { this.go('error', 'Could not load the online part of the game. Check the internet connection.'); return false; }
-    return true;
+    try { await this.lib(); return true; }
+    catch (e) { this.go('error', 'Could not load the online part of the game. Check the internet connection.'); return false; }
   }
 
   // ------------------------------------------------------------ host
-  async host() {
-    if (!await this.prepare()) return;
-    const T = this.T; this.leaveAll(); this.role = 'host';
+  host() {
+    const T = this.T; this.leaveAll(); this.role = 'host'; this.code = newCode();
     this.p2 = null; this.watchers = new Map(); this.requests = []; this.fighting = false;
     this.cfg = { mode: MODES.STOCK, speed: this.savedSpeed, stage: 0, me: this.game.menu.cfg.p1 };
     this.room = T.joinRoom(APP, 'room-' + T.selfId);
@@ -175,11 +240,15 @@ export class Online {
     this.act.pick.onMessage = (d, { peerId }) => { if (this.p2?.id === peerId && !this.fighting) { this.p2.char = int(d, 0, CHARACTERS.length - 1, this.p2.char); this.sendRoom(); this.render(); } };
     this.act.pad.onMessage = (d, { peerId }) => { if (this.p2?.id === peerId) this.pushPad(unpackPad(d)); };
     this.room.onPeerLeave = id => this.onLeave(id);
-    // the lobby: tell everyone nearby about this room
-    const lobby = T.joinRoom(APP, 'lobby-' + this.cell); this.lobbies = [lobby];
-    const ad = lobby.makeAction('ad');
-    lobby.onPeerJoin = id => ad.send(this.adData(), { target: id });
-    this.timers.push(setInterval(() => ad.send(this.adData()), AD_EVERY));
+    // the lobbies: the room code always, and everyone nearby when we know the area
+    const names = ['code-' + this.code, ...(this.cell ? ['lobby-' + this.cell] : [])];
+    const ads = names.map(n => {
+      const lobby = T.joinRoom(APP, n); this.lobbies.push(lobby);
+      const ad = lobby.makeAction('ad');
+      lobby.onPeerJoin = id => ad.send(this.adData(), { target: id });
+      return ad;
+    });
+    this.timers.push(setInterval(() => ads.forEach(ad => ad.send(this.adData())), AD_EVERY));
     this.go('room');
   }
   adData() {
@@ -271,16 +340,14 @@ export class Online {
   }
 
   // ------------------------------------------------------------ finding
-  async find() {
-    if (!await this.prepare()) return;
+  find() {
     const T = this.T; this.leaveAll(); this.role = 'finder'; this.ads = new Map();
     for (const c of cellsAround(this.cell)) {
       const lobby = T.joinRoom(APP, 'lobby-' + c); this.lobbies.push(lobby);
       const ad = lobby.makeAction('ad');
       ad.onMessage = (d, { peerId }) => {
-        if (!d || !okName(d.name) || !okCell(d.cell)) return;
-        this.ads.set(peerId, { id: peerId, name: d.name, cell: d.cell, fighter: int(d.fighter, 0, CHARACTERS.length - 1, 0), stage: int(d.stage, 0, STAGES.length - 1, 0),
-                               open: !!d.open, watchers: int(d.watchers, 0, 99, 0), fighting: !!d.fighting, seen: Date.now(), want: d.open ? 'play' : 'watch' });
+        const r = readAd(d, peerId); if (!r || !r.cell) return;
+        this.ads.set(peerId, r);
         if (this.screen === 'browse') this.render();
       };
       lobby.onPeerLeave = id => { if (this.ads.delete(id) && this.screen === 'browse') this.render(); };
@@ -293,6 +360,19 @@ export class Online {
   }
   rooms() { return [...this.ads.values()].sort((a, b) => cellKm(this.cell, a.cell) - cellKm(this.cell, b.cell)); }
 
+  // A friend's code: listen in that code's lobby until the room says hello, then ask to join.
+  async joinCode(code) {
+    if (!await this.connect()) return;
+    const T = this.T; this.leaveAll(); this.role = 'finder'; this.ads = new Map();
+    const lobby = T.joinRoom(APP, 'code-' + code); this.lobbies.push(lobby);
+    lobby.makeAction('ad').onMessage = (d, { peerId }) => {
+      const r = readAd(d, peerId); if (!r || this.screen !== 'wait') return;
+      this.ask(r);
+    };
+    const t0 = Date.now();
+    this.timers.push(setInterval(() => { if (this.screen === 'wait' && Date.now() - t0 > JOIN_TIMEOUT) { this.leaveAll(); this.typed = ''; this.go('code', `No room with the code ${code} answered. Check the code with your friend and try again.`); } }, 1000));
+    this.go('wait', `Looking for room <b>${code}</b>…`);
+  }
   ask(ad) {
     const T = this.T; this.target = ad; this.myRole = null; this.view = null; this.myChar = this.game.menu.cfg.p1;
     if (this.room) this.room.leave();
@@ -379,12 +459,22 @@ export class Online {
     const C = CHARACTERS, cyc = (v, d, n) => (v + d + n) % n;
     switch (this.screen) {
       case 'home': return [
-        { label: '🏠 Create a room', act: () => this.host() },
-        { label: '🔍 Find rooms nearby', act: () => this.find() },
+        { label: '🏠 Create a room', act: () => this.area('host') },
+        { label: '🔍 Find rooms nearby', act: () => this.area('find') },
+        { label: '🔑 Join with a room code', act: () => { this.typed = ''; this.go('code'); } },
         { label: '◀ Back', act: () => this.exit() }];
+      case 'askloc': return [
+        { label: '📍 Use my location', act: () => this.useLocation() },
+        { label: '🚫 Don\'t use location (play with a room code)', act: () => this.noLocation() },
+        { label: '◀ Back', act: () => this.go('home') }];
+      case 'blocked': return [
+        { label: '🔑 Play with a room code instead', act: () => this.noLocation() },
+        { label: '◀ Back', act: () => this.go('home') }];
+      case 'code': return [
+        { label: this.typed?.length === 4 ? `▶ JOIN ${this.typed} ◀` : 'Type the 4 letters…', go: true, act: () => { if (this.typed?.length === 4) this.joinCode(this.typed); } },
+        { label: '◀ Back', act: () => this.go('home') }];
       case 'wait': return [{ label: '✖ Cancel', act: () => { this.leaveAll(); this.go('home'); } }];
-      case 'noloc': return [{ label: '↻ Try again', act: () => this.find() }, { label: '◀ Back', act: () => this.go('home') }];
-      case 'error': case 'declined': return [{ label: '🔍 Find rooms nearby', act: () => this.find() }, { label: '◀ Back', act: () => { this.leaveAll(); this.go('home'); } }];
+      case 'error': case 'declined': return [{ label: '🔍 Find rooms nearby', act: () => this.area('find') }, { label: '🔑 Join with a room code', act: () => { this.leaveAll(); this.typed = ''; this.go('code'); } }, { label: '◀ Back', act: () => { this.leaveAll(); this.go('home'); } }];
       case 'browse': return [
         ...this.rooms().map(r => ({
           label: `${esc(r.name)} <small>· ${C[r.fighter].name} · ${STAGES[r.stage].name} · ${distText(this.cell, r.cell)}${r.fighting ? ' · fighting now' : ''}</small>`,
@@ -412,19 +502,27 @@ export class Online {
   info() {
     const C = CHARACTERS, you = `You are <b>${esc(this.name)}</b>.`;
     switch (this.screen) {
-      case 'home': return `${you}<br>Rooms are found by <b>rough area</b> (about 20 km). Your exact location is never shared.<br>Two fight, everyone else can watch. The host decides who gets in.`;
-      case 'wait': return esc(this.note);
-      case 'noloc': return 'The game needs your <b>rough area</b> to find rooms near you, but location is off or was blocked.<br>Allow location for this site in the browser (the icon by the address bar), then try again.<br>Only a ~20 km area is ever shared — never your exact spot.';
+      case 'home': return `${you}<br>Find people <b>near you</b>, or share a <b>room code</b> with a friend.<br>Two fight, everyone else can watch. The host decides who gets in.`;
+      case 'wait': return this.note;                       // only ever our own text
+      case 'askloc': return `${this.note ? `<b>${esc(this.note)}</b><br><br>` : ''}📍 To find players <b>near you</b>, the game needs your <b>rough area</b> (about 20 km).<br>
+        Your exact location is <b>never</b> shared.<br><br>Pick <b>Use my location</b>, then press <b>Allow</b> when the browser asks.<br>
+        Or skip it: rooms also have a <b>4-letter code</b> you can tell a friend.`;
+      case 'blocked': return `🚫 This browser is <b>blocking location</b> for the game, and a website isn't allowed to ask again by itself.<br>
+        ${isChrome() ? CHROME_STEPS : 'To switch it on: click the <b>icon at the left of the address bar</b> (🔒 or ⓘ) → <b>Location</b> → <b>Allow</b>.<br>'}
+        <i>The game notices by itself and carries on — no need to reload.</i><br>Or play with a <b>room code</b> instead — no location needed.`;
+      case 'code': return `${this.note ? `<b>${esc(this.note)}</b><br><br>` : ''}Type your friend's <b>room code</b> (they see it on their room screen):
+        <div class="code-boxes">${[0, 1, 2, 3].map(i => `<span>${this.typed?.[i] || ''}</span>`).join('')}</div>Backspace to fix a letter · Enter to join`;
       case 'error': return esc(this.note);
       case 'declined': return 'The host said no this time.';
-      case 'browse': return this.ads.size ? `${you} Rooms near you (←/→ choose play or watch, Enter to ask):` : `${you}<br><span class="searching">Looking for rooms nearby…</span><br>Nobody's hosting near you right now. Leave this open — rooms show up here as soon as someone makes one.`;
+      case 'browse': return this.ads.size ? `${you} Rooms near you (←/→ choose play or watch, Enter to ask):` : `${you}<br><span class="searching">Looking for rooms nearby…</span><br>Nobody's hosting near you right now. Leave this open — rooms show up here as soon as someone makes one.<br>Got a friend's code? Go back and pick <b>Join with a room code</b>.`;
       case 'asking': return !this.hostSeen ? `Connecting to <b>${esc(this.target.name)}</b>'s room…`
         : `Asking <b>${esc(this.target.name)}</b> to let you ${this.target.want === 'play' ? 'play' : 'watch'}…${this.target.fighting ? '<br>They\'re in a match — they\'ll see your request when it ends.' : ''}`;
       case 'room': {
         if (this.role === 'host') {
           const r = this.requests[0];
           if (r) return `<div class="request"><b>${esc(r.name)}</b> wants to <b>${r.play && !this.p2 && !this.fighting ? 'PLAY' : 'WATCH'}</b>.</div>`;
-          return `${esc(this.note)}${this.note ? '<br>' : ''}Your room is open to people in your area.<br>
+          return `${esc(this.note)}${this.note ? '<br>' : ''}Room code: <span class="code">${this.code}</span><br>
+            ${this.cell ? 'People in your area can also find it in their list.' : 'Not listed nearby (no location) — friends join with the code.'}<br>
             🥊 <b>${esc(this.name)}</b> (you) — ${C[this.cfg.me].name}<br>
             🥊 ${this.p2 ? `<b>${esc(this.p2.name)}</b> — ${C[this.p2.char].name}` : '<i>waiting for a player…</i>'}<br>
             👀 ${this.watchers.size ? [...this.watchers.values()].map(esc).join(', ') : 'no watchers'}`;
@@ -451,6 +549,7 @@ export class Online {
       <div class="help">W/S or ↑↓ pick · A/D or ←→ change · Enter / A choose · Esc back · or use the mouse</div></div>`;
   }
   tick(inp) {
+    if (this.screen === 'code') return this.typeCode(inp);
     const m = inp.menu, rows = this.rowsFor();
     if (!rows.length) return;
     if (m.up) { this.sel = (this.sel + rows.length - 1) % rows.length; this.render(); }
@@ -459,6 +558,18 @@ export class Online {
     if ((m.left || m.right) && r.set) { r.set(m.left ? -1 : 1); this.render(); }
     if (m.confirm && r.act) r.act();
     else if (m.back && !(this.role === 'host' && this.requests?.length)) rows[rows.length - 1].act();
+  }
+  // The code screen reads letters straight off the keyboard (W/A/S/D are letters here, not menu moves).
+  typeCode(inp) {
+    const before = this.typed || '';
+    let t = before;
+    for (const c of inp.pressed) {
+      if (c === 'Backspace') t = t.slice(0, -1);
+      else if (/^Key[A-Z]$/.test(c) && t.length < 4 && CODE_ABC.includes(c[3])) t += c[3];
+    }
+    if (t !== before) { this.typed = t; this.note = ''; this.render(); }
+    if (inp.wasPressed('Escape')) return this.go('home');
+    if (inp.wasPressed('Enter') && t.length === 4) this.joinCode(t);
   }
   click(e) {
     if (this.game.state !== 'online') return;

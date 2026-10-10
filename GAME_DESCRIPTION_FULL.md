@@ -6,7 +6,7 @@ Eleven fighters from the Vexo universe, three stages, Stock or Stamina rules, tw
 
 **Super meter**: the bar under your damage and lives fills every time you hit the other fighter. When it's full it flashes *SUPER READY!*: press special (B) to freeze the action, charge up and fire a giant beam in your fighter's colour.
 
-**Play online**: from match setup, *Create a room* or *Find rooms nearby*. Rooms are found by rough area (about 20 km) — your exact location is never shared — and listed nearest first. The host accepts or declines everyone who asks; two fight and anyone else let in can watch. Players get made-up names like "Swift Rockheart 42", so nobody types anything. No server needed: browsers connect directly to each other.
+**Play online**: from match setup, *Create a room* or *Find rooms nearby*. Rooms are found by rough area (about 20 km) — your exact location is never shared — and listed nearest first. The host accepts or declines everyone who asks; two fight and anyone else let in can watch. Location is your choice: the game asks first, and without it every room still has a 4-letter room code to share with a friend. If the browser is blocking location, the game shows step-by-step Chrome/Chromebook help and carries on by itself once it's allowed. Players get made-up names like "Swift Rockheart 42", so nobody types anything. No server needed: browsers connect directly to each other.
 
 **Specials** glow, sparkle and make a sound, so every B move is easy to see even when the camera is zoomed out.
 

@@ -10,7 +10,7 @@
 // Maths space is y-UP with the fighter facing +x. p5's WEBGL is y-DOWN, so
 // drawing negates y. Depth (z) points at the camera: the right arm/leg sit
 // at +z (in front), the left at -z (behind).
-import { Q } from './quality.js?v=48d769e-1791643329';
+import { Q } from './quality.js?v=781da9a-1791645966';
 
 const D = Math.PI / 180;
 

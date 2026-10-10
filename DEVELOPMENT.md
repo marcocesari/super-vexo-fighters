@@ -71,8 +71,13 @@ the instant you're free. Hold a direction when you're hit to **DI** the
 launch a little.
 
 **Play online** (bottom of match setup): **Create a room** or **Find rooms
-nearby**. The browser asks for your location once; the game turns it into a
-rough ~20 km area and only ever shares that, never the exact spot. Rooms in
+nearby**, or **Join with a room code**. Location is the player's choice: the
+game asks in its own screen first (**Use my location** / **Don't use
+location**), and only "Use" brings up the browser's popup. With location, the
+game turns it into a rough ~20 km area and only ever shares that, never the
+exact spot. Without it, every room still has a **4-letter code** (no I or O) to
+tell a friend. If the browser has location blocked, the game explains how to
+switch it on and carries on by itself the moment it's allowed. Rooms in
 your area and the ones around it are listed nearest first. Asking to join pops
 up on the host's screen (**Accept / Decline**); two fight, anyone else accepted
 can watch. Names are made up by the game ("Swift Rockheart 42") so nobody types

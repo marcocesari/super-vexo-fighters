@@ -1,11 +1,11 @@
 // The title screen's background: every fighter in the game, frozen mid-move
 // and piled into one dramatic shot, the way the Smash box art does it.
 // Grows on its own as characters are added — each one gets a slot in the crowd.
-import { Fighter } from './fighter.js?v=48d769e-1791643329';
-import { solveRig, drawRig } from './rig.js?v=48d769e-1791643329';
-import { samplePose } from './poses.js?v=48d769e-1791643329';
-import { CHARACTERS, LOCKED_BUILDS } from './characters/index.js?v=48d769e-1791643329';
-import { Q } from './quality.js?v=48d769e-1791643329';
+import { Fighter } from './fighter.js?v=781da9a-1791645966';
+import { solveRig, drawRig } from './rig.js?v=781da9a-1791645966';
+import { samplePose } from './poses.js?v=781da9a-1791645966';
+import { CHARACTERS, LOCKED_BUILDS } from './characters/index.js?v=781da9a-1791645966';
+import { Q } from './quality.js?v=781da9a-1791645966';
 
 // Action poses to hand out if a character doesn't name its own (`cover: { clip, frame }`).
 const POSES = [['jab', 6], ['uair', 9], ['upspecial', 12], ['fair', 12], ['ftilt', 10], ['nair', 8], ['bair', 10], ['dashattack', 9]];

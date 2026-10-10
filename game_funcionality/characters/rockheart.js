@@ -1,7 +1,7 @@
 // Rockheart — Breakrock King's son. Younger stone, lighter grey, with a
 // glowing crystal heart set in his chest and a crest of red crystal on his
 // head. Sturdier than most, quicker than his father.
-import { glow } from '../rig.js?v=48d769e-1791643329';
+import { glow } from '../rig.js?v=781da9a-1791645966';
 
 export default {
   id: 'rockheart', name: 'Rockheart',
