@@ -1,0 +1,9 @@
+// Super Vexo Fighters on Cloudflare Workers: the game's files plus /api/turn.
+// Deploy with ../tools/deploy-cloudflare.sh (it builds .dist and runs wrangler).
+{
+  "name": "super-vexo-fighters",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./.dist", "binding": "ASSETS" },
+  "workers_dev": true
+}

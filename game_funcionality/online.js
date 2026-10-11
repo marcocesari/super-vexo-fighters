@@ -22,18 +22,25 @@
 // The fight itself runs only on the host. The guest sends their pad every step
 // and gets back a snapshot of everything to draw, so the two screens can never
 // drift apart. Watchers get the same snapshots and send nothing.
-import { CHARACTERS } from './characters/index.js?v=611e15a-1791647664';
-import { STAGES } from './maps/index.js?v=611e15a-1791647664';
-import { MODES, SPEEDS } from './config.js?v=611e15a-1791647664';
-import { Fighter } from './fighter.js?v=611e15a-1791647664';
-import { emptyPad } from './input.js?v=611e15a-1791647664';
-import { samplePose } from './poses.js?v=611e15a-1791647664';
-import { lerpPose } from './rig.js?v=611e15a-1791647664';
-import { Camera } from './camera.js?v=611e15a-1791647664';
+import { CHARACTERS } from './characters/index.js?v=9524b31-1791737944';
+import { STAGES } from './maps/index.js?v=9524b31-1791737944';
+import { MODES, SPEEDS } from './config.js?v=9524b31-1791737944';
+import { Fighter } from './fighter.js?v=9524b31-1791737944';
+import { emptyPad } from './input.js?v=9524b31-1791737944';
+import { samplePose } from './poses.js?v=9524b31-1791737944';
+import { lerpPose } from './rig.js?v=9524b31-1791737944';
+import { Camera } from './camera.js?v=9524b31-1791737944';
 
 const TRYSTERO = 'https://cdn.jsdelivr.net/npm/trystero@0.26.0/+esm';
 const APP = { appId: 'super-vexo-fighters-online-v1' };
 const AD_EVERY = 2000, AD_TTL = 7000, JOIN_TIMEOUT = 20000;
+// TURN: a relay for networks that block direct connections. The game's Cloudflare
+// Worker (cloudflare/worker.js) hands out passwords that last an hour. On the
+// Worker's own site it's just /api/turn; other copies of the game (GitHub
+// Pages, localhost) ask the Worker by its full address once it's known.
+const CF_WORKER = 'https://super-vexo-fighters.marcocesari.workers.dev';   // TURN passwords for copies not on Cloudflare (GitHub Pages)
+const TURN_URL = (globalThis.location?.hostname || '').endsWith('.workers.dev') ? '/api/turn' : CF_WORKER && CF_WORKER + '/api/turn';
+const TURN_REFRESH = 50 * 60 * 1000;           // passwords last 60 min; fetch fresh ones after 50
 const NEARBY_KM = 100;                          // how far away a room can be and still be listed
 const BOARD = 3;                                // geohash length of the lobby boards (the shared cell itself is 4)
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3', MENU_MUSIC = 'assets/audio/menu_music.mp3';
@@ -234,8 +241,24 @@ export class Online {
   }
   async connect() {
     this.go('wait', 'Connecting…');
-    try { await this.lib(); return true; }
+    try { await this.lib(); }
     catch (e) { this.go('error', 'Could not load the online part of the game. Check the internet connection.'); return false; }
+    await this.turn();
+    return true;
+  }
+  // Fetch TURN passwords for this session. If it doesn't work, play on without
+  // the relay: direct connections still work on most home networks.
+  async turn() {
+    if (!TURN_URL || (this.turnAt && Date.now() - this.turnAt < TURN_REFRESH)) return;
+    try {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 4000);
+      const j = await (await fetch(TURN_URL, { signal: ctl.signal, cache: 'no-store' })).json(); clearTimeout(t);
+      const servers = [].concat(j.iceServers || []).map(sv => ({
+        urls: [].concat(sv.urls || []).filter(u => /^turns?:/.test(u) && !/:53(\?|$)/.test(u)),   // browsers time out on port 53
+        username: sv.username, credential: sv.credential,
+      })).filter(sv => sv.urls.length && typeof sv.username === 'string' && typeof sv.credential === 'string');
+      if (servers.length) { this.rtc = { ...APP, turnConfig: servers }; this.turnAt = Date.now(); }
+    } catch (e) { /* no relay this time */ }
   }
 
   // ------------------------------------------------------------ host
@@ -243,7 +266,7 @@ export class Online {
     const T = this.T; this.leaveAll(); this.role = 'host'; this.code = newCode();
     this.p2 = null; this.watchers = new Map(); this.requests = []; this.fighting = false;
     this.cfg = { mode: MODES.STOCK, speed: this.savedSpeed, stage: 0, me: this.game.menu.cfg.p1 };
-    this.room = T.joinRoom(APP, 'room-' + T.selfId);
+    this.room = T.joinRoom(this.rtc || APP, 'room-' + T.selfId);
     const a = n => this.room.makeAction(n);
     this.act = { reply: a('reply'), room: a('room'), start: a('start'), snap: a('snap'), end: a('end'), back: a('back'), hello: a('hello'), pick: a('pick'), pad: a('pad') };
     this.act.hello.onMessage = (d, { peerId }) => this.onHello(d, peerId);
@@ -253,7 +276,7 @@ export class Online {
     // the lobbies: the room code always, and everyone nearby when we know the area
     const names = ['code-' + this.code, ...(this.cell ? ['board-' + this.cell.slice(0, BOARD)] : [])];
     const ads = names.map(n => {
-      const lobby = T.joinRoom(APP, n); this.lobbies.push(lobby);
+      const lobby = T.joinRoom(this.rtc || APP, n); this.lobbies.push(lobby);
       const ad = lobby.makeAction('ad');
       lobby.onPeerJoin = id => ad.send(this.adData(), { target: id });
       return ad;
@@ -353,7 +376,7 @@ export class Online {
   find() {
     const T = this.T; this.leaveAll(); this.role = 'finder'; this.ads = new Map();
     for (const c of boardsWithin(this.cell, NEARBY_KM)) {
-      const lobby = T.joinRoom(APP, 'board-' + c); this.lobbies.push(lobby);
+      const lobby = T.joinRoom(this.rtc || APP, 'board-' + c); this.lobbies.push(lobby);
       const ad = lobby.makeAction('ad');
       ad.onMessage = (d, { peerId }) => {
         const r = readAd(d, peerId); if (!r || !r.cell || cellKm(this.cell, r.cell) > NEARBY_KM) return;   // a big board reaches further than 100 km
@@ -374,7 +397,7 @@ export class Online {
   async joinCode(code) {
     if (!await this.connect()) return;
     const T = this.T; this.leaveAll(); this.role = 'finder'; this.ads = new Map();
-    const lobby = T.joinRoom(APP, 'code-' + code); this.lobbies.push(lobby);
+    const lobby = T.joinRoom(this.rtc || APP, 'code-' + code); this.lobbies.push(lobby);
     lobby.makeAction('ad').onMessage = (d, { peerId }) => {
       const r = readAd(d, peerId); if (!r || this.screen !== 'wait') return;
       this.ask(r);
@@ -386,7 +409,7 @@ export class Online {
   ask(ad) {
     const T = this.T; this.target = ad; this.myRole = null; this.view = null; this.myChar = this.game.menu.cfg.p1;
     if (this.room) this.room.leave();
-    this.room = T.joinRoom(APP, 'room-' + ad.id);
+    this.room = T.joinRoom(this.rtc || APP, 'room-' + ad.id);
     const a = n => this.room.makeAction(n);
     this.act = { hello: a('hello'), pick: a('pick'), pad: a('pad'), reply: a('reply'), room: a('room'), start: a('start'), snap: a('snap'), end: a('end'), back: a('back') };
     const fromHost = fn => (d, { peerId }) => { if (peerId === ad.id) fn(d); };

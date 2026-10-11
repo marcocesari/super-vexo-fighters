@@ -1,14 +1,14 @@
-import vexo from './vexo.js?v=611e15a-1791647664';
-import astra from './astra.js?v=611e15a-1791647664';
-import draxos from './draxos.js?v=611e15a-1791647664';
-import dell from './kingDell.js?v=611e15a-1791647664';
-import bogo from './bogoElf.js?v=611e15a-1791647664';
-import caza from './queenCaza.js?v=611e15a-1791647664';
-import breakrock from './breakrockKing.js?v=611e15a-1791647664';
-import rockheart from './rockheart.js?v=611e15a-1791647664';
-import coma from './queenComa.js?v=611e15a-1791647664';
-import headson from './headson.js?v=611e15a-1791647664';
-import belledon from './belledon.js?v=611e15a-1791647664';
+import vexo from './vexo.js?v=9524b31-1791737944';
+import astra from './astra.js?v=9524b31-1791737944';
+import draxos from './draxos.js?v=9524b31-1791737944';
+import dell from './kingDell.js?v=9524b31-1791737944';
+import bogo from './bogoElf.js?v=9524b31-1791737944';
+import caza from './queenCaza.js?v=9524b31-1791737944';
+import breakrock from './breakrockKing.js?v=9524b31-1791737944';
+import rockheart from './rockheart.js?v=9524b31-1791737944';
+import coma from './queenComa.js?v=9524b31-1791737944';
+import headson from './headson.js?v=9524b31-1791737944';
+import belledon from './belledon.js?v=9524b31-1791737944';
 
 // The whole roster from Marco's sheet.
 export const CHARACTERS = [vexo, astra, draxos, dell, bogo, caza, breakrock, rockheart, coma, headson, belledon];

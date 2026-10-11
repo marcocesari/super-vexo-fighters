@@ -6,19 +6,19 @@
 // in whole 1/60 s steps: tick() may run none, one, or several times before a
 // single paint(). So a fast screen no longer speeds the fight up, and a slow
 // one no longer slows it down; it only gets fewer pictures of it.
-import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=611e15a-1791647664';
-import { Input, emptyPad } from './input.js?v=611e15a-1791647664';
-import { Fighter } from './fighter.js?v=611e15a-1791647664';
-import { CPU } from './cpu.js?v=611e15a-1791647664';
-import { Camera } from './camera.js?v=611e15a-1791647664';
-import { HUD } from './hud.js?v=611e15a-1791647664';
-import { Menu } from './menu.js?v=611e15a-1791647664';
-import { Cover } from './cover.js?v=611e15a-1791647664';
-import { Intro } from './intro.js?v=611e15a-1791647664';
-import { Music } from './music.js?v=611e15a-1791647664';
-import { Sfx } from './sfx.js?v=611e15a-1791647664';
-import { Quality, Q } from './quality.js?v=611e15a-1791647664';
-import { Online } from './online.js?v=611e15a-1791647664';
+import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=9524b31-1791737944';
+import { Input, emptyPad } from './input.js?v=9524b31-1791737944';
+import { Fighter } from './fighter.js?v=9524b31-1791737944';
+import { CPU } from './cpu.js?v=9524b31-1791737944';
+import { Camera } from './camera.js?v=9524b31-1791737944';
+import { HUD } from './hud.js?v=9524b31-1791737944';
+import { Menu } from './menu.js?v=9524b31-1791737944';
+import { Cover } from './cover.js?v=9524b31-1791737944';
+import { Intro } from './intro.js?v=9524b31-1791737944';
+import { Music } from './music.js?v=9524b31-1791737944';
+import { Sfx } from './sfx.js?v=9524b31-1791737944';
+import { Quality, Q } from './quality.js?v=9524b31-1791737944';
+import { Online } from './online.js?v=9524b31-1791737944';
 
 // A frame that is within SNAP_TOLERANCE of a whole number of steps is counted as
 // exactly that many. Without it a 60 Hz screen drifts in and out of phase with
@@ -31,8 +31,8 @@ function snap(dtMs) {
 
 const MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
-import { CHARACTERS } from './characters/index.js?v=611e15a-1791647664';
-import { STAGES } from './maps/index.js?v=611e15a-1791647664';
+import { CHARACTERS } from './characters/index.js?v=9524b31-1791737944';
+import { STAGES } from './maps/index.js?v=9524b31-1791737944';
 
 export class Game {
   constructor(p) { this.p = p; this.t = 0; this.acc = 0; this.lastMs = 0; this.sincePaint = 0; this.repaint = true; }

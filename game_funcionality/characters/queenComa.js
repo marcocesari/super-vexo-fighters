@@ -2,8 +2,8 @@
 // Camelloo goes when it sleeps. A pale moon-cream camel with heavy lids, a
 // midnight mane, a star-scattered gown, a silver crescent tiara, and little
 // stars that orbit her wherever she drifts. Floaty and strange.
-import { glow } from '../rig.js?v=611e15a-1791647664';
-import { camel } from './camel.js?v=611e15a-1791647664';
+import { glow } from '../rig.js?v=9524b31-1791737944';
+import { camel } from './camel.js?v=9524b31-1791737944';
 
 export default {
   id: 'coma', name: 'Queen Coma',

@@ -81,13 +81,25 @@ switch it on and carries on by itself the moment it's allowed. Rooms within
 about 100 km are listed nearest first. Asking to join pops
 up on the host's screen (**Accept / Decline**); two fight, anyone else accepted
 can watch. Names are made up by the game ("Swift Rockheart 42") so nobody types
-anything. There is no server: browsers find each other through public Nostr
+anything. There is no game server: browsers find each other through public Nostr
 relays (Trystero library, loaded only when you open Play online) and then talk
 directly over WebRTC. The fight runs on the host; the guest sends their
 buttons and gets back what to draw, so the screens can't drift apart. Code:
 `game_funcionality/online.js`. Note: connected players' browsers can see each
-other's internet (IP) address, as with any direct peer-to-peer game, and a few
-strict networks (some schools, some phone networks) block direct connections.
+other's internet (IP) address, as with any direct peer-to-peer game. When a
+strict network (some schools, some phone networks) blocks a direct connection,
+the game falls back to Cloudflare's **TURN** relay, which passes the data along.
+
+## Cloudflare copy
+
+The game also runs on Cloudflare Workers:
+**https://super-vexo-fighters.marcocesari.workers.dev**. `cloudflare/worker.js`
+serves the game files and `/api/turn`, which hands out TURN passwords that last
+an hour (the GitHub Pages copy asks it too, via `CF_WORKER` in `online.js`).
+Deploy with `./tools/deploy-cloudflare.sh`; it needs two private files in your
+home folder, never in the project: `~/.cloudflare-svf-token` (API token with
+Workers Scripts Edit + Realtime Edit) and `~/.cloudflare-svf-account` (account ID).
+The first run creates the TURN key and stores it as Worker secrets.
 
 **Rules**: *Stock* — damage % rises, knockback grows with it, get knocked
 past the edge of the screen and lose one of 3 lives. *Stamina* — 150 HP,
