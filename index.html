@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
   <title>Super Vexo Fighters</title>
-  <link rel="stylesheet" href="game_funcionality/style.css?v=9524b31-1791737944">
+  <link rel="stylesheet" href="game_funcionality/style.css?v=mobile-1793033526">
 </head>
 <body>
   <div id="game"></div>
@@ -23,7 +27,10 @@
   <!-- Menus live in the DOM: crisp text, easy to style -->
   <div id="menu"></div>
 
+  <!-- phones held upright: the game plays sideways -->
+  <div id="rotate"><div class="phone"></div><div>Turn your phone sideways</div><small>Super Vexo Fighters plays in landscape</small></div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-  <script type="module" src="game_funcionality/main.js?v=9524b31-1791737944"></script>
+  <script type="module" src="game_funcionality/main.js?v=mobile-1793033526"></script>
 </body>
 </html>

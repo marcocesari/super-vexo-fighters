@@ -1,4 +1,4 @@
-import estronic from './estronicTower.js?v=9524b31-1791737944';
-import castle from './astrasCastle.js?v=9524b31-1791737944';
-import dwellers from './dwellersCastle.js?v=9524b31-1791737944';
+import estronic from './estronicTower.js?v=mobile-1793033526';
+import castle from './astrasCastle.js?v=mobile-1793033526';
+import dwellers from './dwellersCastle.js?v=mobile-1793033526';
 export const STAGES = [estronic, castle, dwellers];

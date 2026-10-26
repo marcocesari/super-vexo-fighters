@@ -22,14 +22,15 @@
 // The fight itself runs only on the host. The guest sends their pad every step
 // and gets back a snapshot of everything to draw, so the two screens can never
 // drift apart. Watchers get the same snapshots and send nothing.
-import { CHARACTERS } from './characters/index.js?v=9524b31-1791737944';
-import { STAGES } from './maps/index.js?v=9524b31-1791737944';
-import { MODES, SPEEDS } from './config.js?v=9524b31-1791737944';
-import { Fighter } from './fighter.js?v=9524b31-1791737944';
-import { emptyPad } from './input.js?v=9524b31-1791737944';
-import { samplePose } from './poses.js?v=9524b31-1791737944';
-import { lerpPose } from './rig.js?v=9524b31-1791737944';
-import { Camera } from './camera.js?v=9524b31-1791737944';
+import { CHARACTERS } from './characters/index.js?v=mobile-1793033526';
+import { STAGES } from './maps/index.js?v=mobile-1793033526';
+import { MODES, SPEEDS } from './config.js?v=mobile-1793033526';
+import { Fighter } from './fighter.js?v=mobile-1793033526';
+import { emptyPad } from './input.js?v=mobile-1793033526';
+import { samplePose } from './poses.js?v=mobile-1793033526';
+import { lerpPose } from './rig.js?v=mobile-1793033526';
+import { Camera } from './camera.js?v=mobile-1793033526';
+import { isTouchDevice } from './touch.js?v=mobile-1793033526';
 
 const TRYSTERO = 'https://cdn.jsdelivr.net/npm/trystero@0.26.0/+esm';
 const APP = { appId: 'super-vexo-fighters-online-v1' };
@@ -544,7 +545,9 @@ export class Online {
         ${isChrome() ? CHROME_STEPS : 'To switch it on: click the <b>icon at the left of the address bar</b> (🔒 or ⓘ) → <b>Location</b> → <b>Allow</b>.<br>'}
         <i>The game notices by itself and carries on — no need to reload.</i><br>Or play with a <b>room code</b> instead — no location needed.`;
       case 'code': return `${this.note ? `<b>${esc(this.note)}</b><br><br>` : ''}Type your friend's <b>room code</b> (they see it on their room screen):
-        <div class="code-boxes">${[0, 1, 2, 3].map(i => `<span>${this.typed?.[i] || ''}</span>`).join('')}</div>Backspace to fix a letter · Enter to join`;
+        <div class="code-boxes">${[0, 1, 2, 3].map(i => `<span>${this.typed?.[i] || ''}</span>`).join('')}</div>${isTouchDevice
+          ? `<div class="letters">${[...CODE_ABC].map(c => `<span data-letter="${c}">${c}</span>`).join('')}<span data-letter="⌫">⌫</span></div>`
+          : 'Backspace to fix a letter · Enter to join'}`;
       case 'error': return esc(this.note);
       case 'declined': return 'The host said no this time.';
       case 'browse': return this.ads.size ? `${you} Rooms within ${NEARBY_KM} km (←/→ choose play or watch, Enter to ask):` : `${you}<br><span class="searching">Looking for rooms within ${NEARBY_KM} km…</span><br>Nobody's hosting within ${NEARBY_KM} km right now. Leave this open — rooms show up here as soon as someone makes one.<br>Got a friend's code? Go back and pick <b>Join with a room code</b>.`;
@@ -606,6 +609,12 @@ export class Online {
   }
   click(e) {
     if (this.game.state !== 'online') return;
+    const letter = e.target.closest('[data-letter]')?.dataset.letter;     // the on-screen letters (phones)
+    if (letter && this.screen === 'code') {
+      const t = this.typed || '';
+      this.typed = letter === '⌫' ? t.slice(0, -1) : t.length < 4 ? t + letter : t;
+      this.note = ''; return this.render();
+    }
     const row = e.target.closest('[data-i]'); if (!row) return;
     const rows = this.rowsFor(), i = +row.dataset.i, r = rows[i]; if (!r) return;
     this.sel = i;

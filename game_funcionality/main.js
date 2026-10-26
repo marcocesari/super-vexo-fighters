@@ -1,4 +1,4 @@
-import { Game } from './game.js?v=9524b31-1791737944';
+import { Game } from './game.js?v=mobile-1793033526';
 
 new p5(p => {
   const game = new Game(p); window.game = game;   // handy for poking at it from the console

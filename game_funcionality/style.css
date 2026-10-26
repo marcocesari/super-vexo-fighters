@@ -91,3 +91,65 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 .setup.online .steps ol { margin: 4px 0 8px; padding-left: 22px; }
 .setup.online .steps li { margin: 2px 0; }
 .chrome-ico { width: 1.2em; height: 1.2em; vertical-align: -0.25em; padding: 1px 3px; border-radius: 6px; background: rgba(255,255,255,.18); color: #fff; }
+
+/* ---------- PHONES & TABLETS (touch.js) ---------- */
+/* no page zoom, scroll bounce or long-press menus while fighting */
+body.touch { touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
+#touch { position: fixed; inset: 0; z-index: 5; touch-action: none; }
+/* the joystick only appears under the thumb, like in New Super Mario Bros 2D All Stars */
+.tstick { position: absolute; border-radius: 50%; background: rgba(255,255,255,.22); border: 2px solid rgba(255,255,255,.7); pointer-events: none; }
+.tknob { position: absolute; left: 50%; top: 50%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.75) 0 22%, transparent 24%), rgb(80,140,220); box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+/* glossy face buttons: dark rim, drop shadow, top highlight, brighter while held */
+.tbtn { position: absolute; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none;
+  background: radial-gradient(ellipse 52% 38% at 38% 30%, rgba(255,255,255,.45), transparent 70%), var(--c);
+  box-shadow: 0 0 0 .05em rgba(0,0,0,.7), 1px 3px 0 .05em rgba(0,0,0,.35); opacity: .88; color: rgba(0,0,0,.85); text-shadow: none; }
+.tbtn b { font-size: 1em; line-height: 1; font-weight: 900; }
+.tbtn small { font-size: max(8px, .22em); font-weight: 800; letter-spacing: 1px; margin-top: .15em; }
+.tbtn.held { filter: brightness(1.25); transform: scale(.94); opacity: 1; }
+.tpause { position: absolute; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); margin-top: 44px; width: 44px; height: 34px; border-radius: 10px;
+  background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; gap: 5px; }
+.tpause i { width: 5px; height: 15px; border-radius: 2px; background: #fff; }
+/* the HUD moves to the top corners, out from under the thumbs */
+body.touch .hud-players { top: max(6px, env(safe-area-inset-top)); bottom: auto; justify-content: space-between; padding: 0 max(14px, env(safe-area-inset-left)); }
+body.touch .hud-fps { top: auto; bottom: 6px; }
+/* tappable menu buttons */
+.mbtn { display: inline-block; padding: 6px 12px; border-radius: 10px; cursor: pointer; }
+body.touch .mbtn { border: 2px solid rgba(255,255,255,.6); background: rgba(0,0,0,.4); margin: 4px; }
+body.touch .press { animation: none; }
+body.touch .setup .help.keys, body.touch .setup .roster { display: none; }
+body.touch .row { cursor: pointer; }
+body.touch .row .val [data-d] { display: inline-block; padding: 2px 12px; margin: -2px 0; border-radius: 8px; background: rgba(255,255,255,.15); }
+.letters { display: flex; flex-wrap: wrap; gap: 6px; max-width: 520px; margin: 4px 0; }
+.letters span { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,.18); font-size: 20px; font-weight: 800; cursor: pointer; }
+/* rotate prompt: only a touch screen held upright */
+#rotate { display: none; }
+@media (pointer: coarse) and (orientation: portrait) {
+  #rotate { display: flex; position: fixed; inset: 0; z-index: 50; background: #000; color: #fff; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 22px; font-weight: 800; text-align: center; }
+  #rotate small { font-size: 15px; font-weight: 400; opacity: .7; }
+  #rotate .phone { width: 44px; height: 80px; border-radius: 8px; border: 6px solid #ffd23f; animation: turn 1.6s ease-in-out infinite; }
+}
+@keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(90deg); } }
+/* small screens (a phone on its side is only ~360-430 px tall) */
+@media (max-height: 520px) {
+  .hud-player { min-width: 150px; }
+  .hud-player .name { font-size: 14px; }
+  .hud-player .pct { font-size: 34px; }
+  .hud-player .pct small { font-size: 16px; }
+  .hud-player .stocks { font-size: 15px; margin-top: 0; }
+  .hud-player .hpbar, .hud-player .superbar { width: 150px; }
+  .hud-timer { font-size: 20px; top: 6px; }
+  .announce { font-size: 56px; }
+  .announce.small { font-size: 26px; }
+  .result { font-size: 44px; }
+  .pause { font-size: 40px; }
+  .press { font-size: 16px; }
+  .setup { min-width: 0; width: min(560px, 94vw); padding: 8px 16px; box-sizing: border-box; }
+  .setup h2 { font-size: 18px; margin-bottom: 4px; }
+  .row { font-size: 15px; padding: 5px 10px; }
+  .row.go { font-size: 19px; margin-top: 4px; }
+  .help { font-size: 11px; margin-top: 6px; }
+  .title.big { font-size: min(11vw, 17vh); }
+  .press.start { font-size: min(4.5vw, 22px); }
+  .code-boxes span { width: 36px; height: 42px; font-size: 24px; }
+  .setup.online { min-width: 0; }
+}

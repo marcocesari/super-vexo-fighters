@@ -72,4 +72,3 @@ export const RESPAWN_DELAY = 70;
 export const SUPER_MAX = 100;
 export const SUPER_GAIN = 2.5;           // meter per 1% of damage dealt → about 40% of damage fills it
 export const SUPER_BLOCK_GAIN = 0.8;     // per 1% that hits a shield
-export const SUPER_FREEZE = 24;          // frames the other fighter is frozen when the super starts

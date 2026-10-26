@@ -43,6 +43,16 @@ hard over runs), stick up or X/Y jump, **A** attack, **B** special, any
 shoulder or trigger shields, **Start** pauses. In menus: d-pad/stick to
 navigate, A or Start to confirm, B to go back.
 
+**Phones & tablets** (held sideways — upright shows a "turn your phone" screen):
+tap the title, tap ◀ ▶ on the setup rows, tap **FIGHT!**. In the fight Player 1
+gets an on-screen pad laid out like New Super Mario Bros 2D All Stars: a
+**joystick that appears under your left thumb** wherever it lands (gentle push
+walks, all the way runs, push up jumps, push down crouches / fast-falls), and on
+the right a big green **A** attack, red **B** special, blue **X** jump and yellow
+**Y** shield. ❚❚ at the top pauses. The first tap goes fullscreen where the
+phone allows it. A touchscreen laptop gets the pad as soon as you touch the
+screen, and it hides again when you press a key.
+
 Attack + a direction picks the move, like Smash: neutral **jab**, side
 **forward tilt**, up **up tilt**, down **down tilt**, attack while running
 for a **dash attack**. In the air the same directions give **nair / fair /
@@ -52,8 +62,9 @@ bair / uair / dair** (dair spikes). Special + up is the **recovery move**
 **Super meter**: the bar under your % / lives fills every time you hit the
 other fighter (about 40% of damage dealt fills it; hitting a shield fills a
 little). When it's full it flashes **SUPER READY!** and your next **special
-(B)** is the **super** instead: everyone else freezes, you charge up, and fire
-a giant beam in your colour (28%, KOs at high damage). You can't be hit while
+(B)** is the **super** instead: you charge up and fire
+a giant beam in your colour (28%, KOs at high damage). Nobody freezes: the
+others keep moving and can jump or dodge out of the way. You can't be hit while
 doing it. The meter is kept when you lose a life. A character file can swap in
 its own super with `super: { fire(f, game) { … } }`.
 
@@ -142,6 +153,8 @@ game_funcionality/
   quality.js        the graphics levels, and the watchdog that picks one
   game.js           match flow, hits, projectiles, rendering
   menu.js, hud.js   DOM overlays
+  input.js          keyboard + gamepads → one "pad" per player
+  touch.js          phones: the on-screen joystick + A B X Y buttons
 tools/smoke.mjs     headless CPU-vs-CPU test:  node tools/smoke.mjs
 ```
 

@@ -12,10 +12,10 @@
 //   · ledge grab, ledge jump / climb / drop, double jump refreshed on grab
 import { GRAVITY, FALL, FAST_FALL_MUL, GROUND_FRICTION, AIR_FRICTION, JUMPSQUAT, LANDING_LAG, AIRDODGE_LANDING_LAG, INPUT_BUFFER,
          LAUNCH_SPEED, LAUNCH_DECAY, TUMBLE_KB, HITLAG_CAP, SHIELD_HP, SHIELD_DRAIN, SHIELD_REGEN, SHIELD_BREAK_STUN,
-         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY, SUPER_MAX, SUPER_GAIN, SUPER_BLOCK_GAIN, SUPER_FREEZE } from './config.js?v=9524b31-1791737944';
-import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js?v=9524b31-1791737944';
-import { Q } from './quality.js?v=9524b31-1791737944';
-import { buildClips, samplePose } from './poses.js?v=9524b31-1791737944';
+         MODES, STOCKS, STAMINA_HP, RESPAWN_INVINCIBLE, RESPAWN_DELAY, SUPER_MAX, SUPER_GAIN, SUPER_BLOCK_GAIN } from './config.js?v=mobile-1793033526';
+import { solveRig, drawRig, BASE_PROPS, lerpPose } from './rig.js?v=mobile-1793033526';
+import { Q } from './quality.js?v=mobile-1793033526';
+import { buildClips, samplePose } from './poses.js?v=mobile-1793033526';
 
 const AERIALS = { neutral: 'nair', forward: 'fair', back: 'bair', up: 'uair', down: 'dair' };
 const TILTS = { neutral: 'jab', forward: 'ftilt', back: 'ftilt', up: 'utilt', down: 'dtilt' };
@@ -295,7 +295,6 @@ export class Fighter {
   addSuper(n) { if (this.state !== 'super') this.superMeter = Math.min(SUPER_MAX, this.superMeter + n); }
   startSuper(game) {
     this.superMeter = 0; this.fastFalling = false; this.setState('super');
-    for (const o of game.fighters || []) if (o !== this && !o.dead) o.hitlag = Math.max(o.hitlag, SUPER_FREEZE);   // everyone else freezes for the moment
     game.onSuper?.(this);
   }
   // Hang in the air and gather power, then let it go.

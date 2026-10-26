@@ -1,6 +1,6 @@
 // Belledon — the bell knight. A paladin in bronze bell-shaped armour with a
 // bell for a helmet, a clapper pendant, and a war hammer. Every hit rings.
-import { glow } from '../rig.js?v=9524b31-1791737944';
+import { glow } from '../rig.js?v=mobile-1793033526';
 
 export default {
   id: 'belledon', name: 'Belledon',

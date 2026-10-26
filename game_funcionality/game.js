@@ -6,19 +6,19 @@
 // in whole 1/60 s steps: tick() may run none, one, or several times before a
 // single paint(). So a fast screen no longer speeds the fight up, and a slow
 // one no longer slows it down; it only gets fewer pictures of it.
-import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=9524b31-1791737944';
-import { Input, emptyPad } from './input.js?v=9524b31-1791737944';
-import { Fighter } from './fighter.js?v=9524b31-1791737944';
-import { CPU } from './cpu.js?v=9524b31-1791737944';
-import { Camera } from './camera.js?v=9524b31-1791737944';
-import { HUD } from './hud.js?v=9524b31-1791737944';
-import { Menu } from './menu.js?v=9524b31-1791737944';
-import { Cover } from './cover.js?v=9524b31-1791737944';
-import { Intro } from './intro.js?v=9524b31-1791737944';
-import { Music } from './music.js?v=9524b31-1791737944';
-import { Sfx } from './sfx.js?v=9524b31-1791737944';
-import { Quality, Q } from './quality.js?v=9524b31-1791737944';
-import { Online } from './online.js?v=9524b31-1791737944';
+import { MODES, HITLAG_CAP, STEP_MS, MAX_FRAME_MS, MAX_CATCHUP_STEPS, SNAP_TOLERANCE, SPEEDS, TARGET_FPS } from './config.js?v=mobile-1793033526';
+import { Input, emptyPad } from './input.js?v=mobile-1793033526';
+import { Fighter } from './fighter.js?v=mobile-1793033526';
+import { CPU } from './cpu.js?v=mobile-1793033526';
+import { Camera } from './camera.js?v=mobile-1793033526';
+import { HUD } from './hud.js?v=mobile-1793033526';
+import { Menu } from './menu.js?v=mobile-1793033526';
+import { Cover } from './cover.js?v=mobile-1793033526';
+import { Intro } from './intro.js?v=mobile-1793033526';
+import { Music } from './music.js?v=mobile-1793033526';
+import { Sfx } from './sfx.js?v=mobile-1793033526';
+import { Quality, Q } from './quality.js?v=mobile-1793033526';
+import { Online } from './online.js?v=mobile-1793033526';
 
 // A frame that is within SNAP_TOLERANCE of a whole number of steps is counted as
 // exactly that many. Without it a 60 Hz screen drifts in and out of phase with
@@ -31,8 +31,8 @@ function snap(dtMs) {
 
 const MENU_MUSIC = 'assets/audio/menu_music.mp3';
 const BATTLE_MUSIC = 'assets/audio/battle_music.mp3';
-import { CHARACTERS } from './characters/index.js?v=9524b31-1791737944';
-import { STAGES } from './maps/index.js?v=9524b31-1791737944';
+import { CHARACTERS } from './characters/index.js?v=mobile-1793033526';
+import { STAGES } from './maps/index.js?v=mobile-1793033526';
 
 export class Game {
   constructor(p) { this.p = p; this.t = 0; this.acc = 0; this.lastMs = 0; this.sincePaint = 0; this.repaint = true; }
@@ -115,7 +115,7 @@ export class Game {
     switch (this.state) {
       case 'title':
         this.intro.tick(document.getElementById('menu'));
-        if (m.any) { this.intro.stop(); this.state = 'setup'; this.menu.setup(this.input); if (!this.music.playing) this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
+        if (m.any) { this.intro.stop(); this.menu.quietUntil = performance.now() + 600; this.state = 'setup'; this.menu.setup(this.input); if (!this.music.playing) this.music.play(MENU_MUSIC, { volume: 0.55, fadeIn: 0.8 }); }
         break;
       case 'setup':
         this.music.update(1);
@@ -155,6 +155,7 @@ export class Game {
         else if (m.back) this.toSetup();
         break;
     }
+    inp.touch.show((this.state === 'fight' && !this.netHint) || (this.state === 'netview' && !this.online.leaveHint));   // the online "leave?" buttons need the screen
     inp.endFrame();
   }
 

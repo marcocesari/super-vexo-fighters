@@ -15,7 +15,11 @@
 //   stick up / d-pad up jump (tap jump, like Smash)   X or Y  jump
 //   A  attack     B  special     any shoulder / trigger  shield
 //   Start  pause / confirm in menus     B  back in menus
+// Phones / tablets: on-screen joystick + A B X Y buttons (touch.js) drive Player 1,
+// and every menu line marked data-key can be tapped.
 // Every binding is a list of key codes: any of them counts.
+import { Touch } from './touch.js?v=mobile-1793033526';
+
 export const KEYBOARD = {
   left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'],
   jump: ['ArrowLeft'], attack: ['ArrowRight'], special: ['ArrowDown'],
@@ -61,6 +65,11 @@ export class Input {
     });
     window.addEventListener('keyup', e => this.held.delete(e.code));
     window.addEventListener('blur', () => this.held.clear());
+    // touch: the on-screen pad, taps on menu buttons ([data-key] = a menu action), and "tap anywhere" for the title
+    this.touch = new Touch(); this.touchPad = emptyPad();
+    this.taps = new Set();
+    window.addEventListener('pointerdown', () => this.taps.add('any'));
+    document.addEventListener('click', e => { const k = e.target.closest?.('[data-key]'); if (k) this.taps.add(k.dataset.key); });
   }
 
   // Call once at the start of every frame: reads the gamepads and works out which buttons were just pressed.
@@ -98,6 +107,10 @@ export class Input {
     m.up ||= kp('ArrowUp') || kp('KeyW'); m.down ||= kp('ArrowDown') || kp('KeyS');
     m.left ||= kp('ArrowLeft') || kp('KeyA'); m.right ||= kp('ArrowRight') || kp('KeyD');
     m.confirm ||= kp('Enter'); m.back ||= kp('Escape'); m.start ||= kp('Escape') || kp('Enter'); m.any ||= kp('Enter') || kp('Space');
+    const t = this.touch.poll(); this.touchPad = t.pad;
+    if (t.start) this.taps.add('start');
+    for (const k of this.taps) m[k] = true;
+    this.taps.clear();
     this.menu = m;
   }
 
@@ -121,9 +134,9 @@ export class Input {
       pad.attackP = p('attack'); pad.specialP = p('special'); pad.shieldP = p('shield');
       pad.x = (pad.right ? 1 : 0) - (pad.left ? 1 : 0);
     }
-    if (g) {
-      if (!pad.x) pad.x = g.x;
-      for (const k of ['left', 'right', 'up', 'down', 'jump', 'attack', 'special', 'shield', 'upP', 'downP', 'jumpP', 'attackP', 'specialP', 'shieldP']) pad[k] ||= g[k];
+    for (const src of [g, i === 0 && this.touch.shown ? this.touchPad : null]) if (src) {
+      if (!pad.x) pad.x = src.x;
+      for (const k of ['left', 'right', 'up', 'down', 'jump', 'attack', 'special', 'shield', 'upP', 'downP', 'jumpP', 'attackP', 'specialP', 'shieldP']) pad[k] ||= src[k];
     }
     return pad;
   }
@@ -139,6 +152,7 @@ export class Input {
   assignName(i) {
     const a = this.assign[i];
     if (a >= 0 && this.gpNames[a]) return `🎮 ${this.gpNames[a]}`;
+    if (i === 0 && this.touch.active) return '📱 Touch screen';
     return this.kbShared() ? (i === 0 ? '⌨️ Keyboard (WASD + arrows)' : '⌨️ Keyboard (IJKL + O P U)') : '⌨️ Keyboard';
   }
   wasPressed(code) { return this.pressed.has(code); }

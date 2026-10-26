@@ -1,6 +1,6 @@
 // Estronic Tower — the roof of the tallest building in the capital, at night.
 // A main roof, two side ledges and a crown platform, above a sea of neon.
-import { platform, drawPlatform, box, rng } from './common.js?v=9524b31-1791737944';
+import { platform, drawPlatform, box, rng } from './common.js?v=mobile-1793033526';
 
 const P = [platform(0, 0, 900, 70, true), platform(-290, 165, 220, 14), platform(290, 165, 220, 14), platform(0, 310, 200, 14)];
 
